@@ -25,9 +25,6 @@ while not wlan.isconnected():
     ssid = nets[i][0].decode("ascii")
     pwd = credentials["wifi"][ssid]
     bssid = nets[i][1]
-    print(ssid)
-    print(pwd)
-    print(bssid)
     wlan.connect(ssid, pwd, bssid=bssid)
     retry = 0
     while (not wlan.isconnected()) and (retry < 5):
