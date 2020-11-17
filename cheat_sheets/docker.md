@@ -12,34 +12,35 @@ Docker-Compose:
 >>> sudo chmod +x /usr/local/bin/docker-compose
 >>> sudo pip install docker-compose
 ```
+## Begriffe
 
-## Images
+* **Image**: Paket aus einer Software in einer bestimmten Version und der zur Laufzeit benötigeten Diensten und Dateien.
+* **Container**: Instanz eines Images.
 
-Ein Image von Dockerhub herunterladen:
 
-```
->>> sudo docker pull eclipse-mosquitto
-```
+## Neuen Container starten
 
 Ein Image ausführen (und herunterladen, falls noch nicht geschehen):
 ```
+>>> sudo docker run <IMAGE>
 >>> sudo docker run eclipse-mosquitto
 ```
-Oder direkt im Hintergrund:
-```
->>> sudo docker run -d eclipse-mosquitto
-ed5fcc06a7ddb5413c8646fa33a442ff24091be8bef44b07c774123c1a874696
-```
-Und später wieder zum Terminal des Containers verbinden:
-```
->>> sudo docker attach ed5f
-```
-Port Mapping (Port 1000 der Maschine auf 1883 des Containers):
-```
->>> sudo docker run -d -p 1000:1883 eclipse-mosquitto
-```
-Volume Mapping:
 
+| Parameter                     | Bedeutung      | Erklärung                                         |
+|-------------------------------|----------------|---------------------------------------------------|
+| `-d`                          | Detached       | Container läuft im Hintergrund                    |
+| `-p Host_Port:Container_Port` | Port-Mapping   | einen Port an einen Container weiterleiten        |
+| `-P`                          | Port-Mapping   | alle Ports weiterleiten                           |
+| `-v Host_Dir:Container_Dir`   | Volume-Mapping | Container speichert seine Daten in einem Ordner im Dateisystem |
+| `-it`                         | Interactive    | Interactive Mode mit Terminal                     |
+
+
+Port Mapping (Port 1884 der Maschine auf 1883 des Containers):
+```
+>>> sudo docker run -d -p 1884:1883 eclipse-mosquitto
+```
+
+## Container steuern
 
 Laufende Container auflisten:
 ```
@@ -48,18 +49,32 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 488c2b58091a        eclipse-mosquitto   "/docker-entrypoint.…"   20 seconds ago      Up 18 seconds       1883/tcp            eloquent_sutherland
 ```
 
-Laufenden Containder beenden:
+| Parameter | Erklärung                                                    |
+|-----------|--------------------------------------------------------------|
+| `-a`      | Alle Container auflisten (auch die, die gerade nicht laufen) |
+
+Laufenden Container anhalten:
 ```
 >>> sudo docker stop 488c2b58091a
-```
-oder
-```
 >>> sudo docker stop eloquent_sutherland
 ```
-
-Container löschen:
+Angehaltenen Container starten:
 ```
->>> sudo docker rm eclipse-mosquitto
+>>> sudo docker start 488c2b58091a
+>>> sudo docker start eloquent_sutherland
+```
+Eine Shell in einem laufenden Container starten
+```
+>>> sudo docker exec -it 488c2b58091a bash
+>>> sudo docker exec -it eloquent_sutherland bash
+```
+
+## Images
+
+Ein Image von Dockerhub herunterladen:
+```
+>>> sudo docker pull <IMAGE>
+>>> sudo docker pull eclipse-mosquitto
 ```
 
 Images auflisten:
