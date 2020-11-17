@@ -40,7 +40,7 @@ nets = [x for x in nets if x[0].decode("ascii") in credentials["wifi"]]
 
 ```python
 i = -1       # Zählvariable
-ssid = ""   # WiFi, zu dem man sich verbinden konnte
+ssid = ""    # WiFi, zu dem man sich verbinden konnte
 while not wlan.isconnected():
     i = i + 1 if i < len(nets)-1 else 0
     ssid = nets[i][0].decode("ascii")
