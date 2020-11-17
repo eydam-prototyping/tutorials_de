@@ -89,3 +89,5 @@ while not wlan.isconnected():
 
 print("connected to wifi " + ssid)
 ```
+
+> :warning: **Achtung**: In `credentials.json` liegen unverschlüsselte Passwörter, die mit wenig Aufwand ausgelesen werden können. Dieser Weg sollte also nur in einer sicheren Umgebung gegangen werden. 
