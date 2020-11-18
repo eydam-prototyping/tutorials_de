@@ -178,6 +178,104 @@ d0048b5cd3b3        eclipse-mosquitto:latest   "/docker-entrypoint.…"   12 sec
 e248822bf387        influxdb:latest            "/entrypoint.sh infl…"   12 seconds ago      Up 9 seconds        0.0.0.0:8086->8086/tcp         docker_influxdb_1
 ```
 
-Und Grafana sollte vom Browser aus erreichbar sein. Dazu die IP vom Raspberry Pi gefolgt von :3000 in die Adresszeile des Browsers eingeben:
+## Grafana
+
+Grafana sollte nun vom Browser aus erreichbar sein. Dazu die IP vom Raspberry Pi gefolgt von :3000 in die Adresszeile des Browsers eingeben:
 
 ![Grafana Login Screen](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2019_43_37-Grafana.png)
+
+Beim ersten Login wird man aufgefordert, das Passwort zu ändern. Danach ist man eingeloggt :)
+
+Um zu testen, ob wir von Grafana aus auf die Datenbank zugreifen können, klicken wir Rechts auf das Zahnrad (Configuration) und dann auf "Data Sources":
+
+![Grafana Menu](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_03_08-Grafana.png)
+
+Hier können wir eine neue Datenquelle erstellen. Wir klicken auf "Add Data Source" und dann auf "InfluxDB".
+Hier tragen wir unter dem Punkt HTTP bei URL den Wert "http://influxdb:8086" ein (influxdb, weil wir docker nutzen) und unter dem Punkt InfluxDB Details bei Database den Wert "telegraf". Ganz unten klicken wir dann auf "Save & Test". Wenn alles funktioniert hat, erscheit die Meldung "Data Source is working".
+
+![Grafana Data Source](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_10_09-InfluxDB_Settings-Grafana.png)
+
+![Grafana Data Source](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_12_08-InfluxDB_Settings-Grafana.png)
+
+## Telegraf
+
+Damit wir jetzt ein paar Daten zum Darstellen haben, können wir den Zustand des Raspberry Pi monitoren. Ich habe mir dazu ein fertiges Dashboard rausgesucht: [https://grafana.com/grafana/dashboards/10578](https://grafana.com/grafana/dashboards/10578). Dazu muss die vorhin erzeugte `telegraf.conf` bearbeitet werden. Also wieder zurück zum Raspberry Pi:
+
+```shell
+pi@raspberrypi:~/docker/telegraf $ nano telegraf.conf
+```
+
+Hier müssen die `#`-Zeichen (Kommentar) vor folgenden Zeilen entfernt werden, bzw. die entsprechenden Zeilen angepasst werden:
+
+```shell
+[[outputs.influxdb]]
+  urls = ["http://influxdb:8086"]
+
+[[inputs.net]]
+  interfaces = ["eth0", "wlan0"]
+
+[[inputs.netstat]]
+
+[[inputs.file]]
+  files = ["/sys/class/thermal/thermal_zone0/temp"]
+  name_override = "cpu_temperature"
+  data_format = "value"
+  data_type = "integer"
+
+[[inputs.exec]]
+  commands = ["/opt/vc/bin/vcgencmd measure_temp"]
+  name_override = "gpu_temperature"
+  data_format = "grok"
+  grok_patterns = ["%{NUMBER:value:float}"]
+```
+
+Um Informationen über die GPU auslesen zu können, müssen wir noch die Rechte anpassen:
+
+```shell
+pi@raspberrypi:~/docker $ sudo usermod -G video pi
+```
+
+Dann die Container neustarten mit:
+```shell
+pi@raspberrypi:~/docker $ docker-compose restart
+Restarting docker_telegraf_1  ... done
+Restarting docker_grafana_1   ... done
+Restarting docker_influxdb_1  ... done
+Restarting docker_mosquitto_1 ... done
+```
+
+Um sicherzustellen, dass man sich nicht irgendwo vertippt hat und das Config-File nicht geparst werden kann, kann man direkt danach prüfen, ob alle Container wirklich laufen:
+
+```shell
+pi@raspberrypi:~/docker $ docker ps
+CONTAINER ID        IMAGE                      COMMAND                  CREATED             STATUS              PORTS                          NAMES
+f852de155e04        telegraf:latest            "/entrypoint.sh tele…"   42 minutes ago      Up About a minute   8092/udp, 8125/udp, 8094/tcp   docker_telegraf_1
+1998c84c5cb7        grafana/grafana:latest     "/run.sh"                42 minutes ago      Up About a minute   0.0.0.0:3000->3000/tcp         docker_grafana_1
+8745dbf9bed1        influxdb:latest            "/entrypoint.sh infl…"   42 minutes ago      Up About a minute   0.0.0.0:8086->8086/tcp         docker_influxdb_1
+747b453ef975        eclipse-mosquitto:latest   "/docker-entrypoint.…"   42 minutes ago      Up About a minute   0.0.0.0:1883->1883/tcp         docker_mosquitto_1
+```
+
+Sollte das nicht der Fall sein, helfen einem die Log-Files oft weiter:
+
+```shell
+pi@raspberrypi:~/docker $ docker-compose logs telegraf
+```
+
+Jetzt sollten Status-Daten vom Raspberry Pi in die Datenbank gespeichert werden. Diese können wir in Grafana abrufen. Dazu können wir uns entweder selbst ein Dashboard erstellen, oder das oben erwähnte, fertige Dashboard importieren. Dazu in Grafana rechts auf das Plus (Create) und dann auf Import klicken:
+
+![Grafana Menu](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_44_03-Grafana.png)
+
+Dann in das Feld "Import via grafana.com" die ID des Dashboards 10578 eintragen und dann auf "Load" klicken:
+
+![Grafana Menu](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_48_46-Import_Import-Grafana.png)
+
+Auf der nächsten Seite noch die vorhin erzeugte Datenquelle (InfluxDB) angeben und auf Import klicken:
+
+![Grafana Menu](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_50_19-Import_Import-Grafana.png)
+
+Dann sollte das Dashboard zu sehen sein:
+
+![Grafana Menu](https://github.com/eydam-prototyping/tutorials_de/blob/master/raspberry_pi/smart_home_server/img/2020-11-18%2020_52_12-Raspberry%20Pi%20Monitoring-Grafana.png)
+
+
+Herzlichen Glückwunsch, du hast dir eine erste kleine Smart-Home-Zentrale erstellt :)
