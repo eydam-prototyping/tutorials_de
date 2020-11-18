@@ -275,3 +275,5 @@ Dann sollte das Dashboard zu sehen sein:
 
 
 Herzlichen Glückwunsch, du hast dir eine erste kleine Smart-Home-Zentrale erstellt :)
+
+MQTT konnten wir hier noch nicht testen, dafür brauchen wir ein paar IoT-Geräte.
