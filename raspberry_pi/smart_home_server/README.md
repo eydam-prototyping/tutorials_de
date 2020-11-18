@@ -106,33 +106,29 @@ services:
   influxdb:
     image: influxdb:latest
     ports:
-      - 8083:8083
       - 8086:8086
-      - 8090:8090
     volumes:
-      # Daten werden im oben erstellten docker-Ordner gespeichert
       - /home/pi/docker/influxdb:/var/lib/influxdb
     environment:
-      # Umgebungsvariablen festlegen
       - INFLUXDB_DB=telegraf
       - INFLUXDB_ADMIN_USER=admin
       - INFLUXDB_ADMIN_PASSWORD=admin
 
   telegraf:
     image: telegraf:latest
+    user: "1000"
     volumes:
-      # Telegraf muss noch konfiguriert werden, mehr dazu weiter unten
       - /home/pi/docker/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - INFLUXDB_ADMIN_USER=admin
       - INFLUXDB_ADMIN_PASSWORD=admin
     depends_on:
-      # telegraf darf erst gestartet werden, wenn influxdb läuft
       - influxdb
-    
+
   grafana:
     image: grafana/grafana:latest
+    user: "1000"
     ports:
       - 3000:3000
     volumes:
