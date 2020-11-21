@@ -15,6 +15,10 @@ Die typischen Messgrößen, die man bei einer Wetterstation aufnimmt, sind Tempe
 
 # Schaltung
 
+![Schematic](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/wetterstation_Steckplatine.png)
+
+![PCB](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/wetterstation_Schaltplan.png)
+
 # Software
 
 In [diesem Tutorial](https://github.com/eydam-prototyping/tutorials_de/tree/master/raspberry_pi/smart_home_server) habe ich gezeigt, wie man sich eine kleine Smart-Home-Zentrale einrichten kann. Diese werden wir für dieses Tutorial nutzen. Wir werden mit dem ESP32 über das MQTT-Protokoll die Messwerte an den Raspberry Pi senden und sie dort mit Grafana darstellen.
