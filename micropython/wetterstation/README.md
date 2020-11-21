@@ -20,7 +20,7 @@ Die typischen Messgrößen, die man bei einer Wetterstation aufnimmt, sind Tempe
 In [diesem Tutorial](https://github.com/eydam-prototyping/tutorials_de/tree/master/raspberry_pi/smart_home_server) habe ich gezeigt, wie man sich eine kleine Smart-Home-Zentrale einrichten kann. Diese werden wir für dieses Tutorial nutzen. Wir werden mit dem ESP32 über das MQTT-Protokoll die Messwerte an den Raspberry Pi senden und sie dort mit Grafana darstellen.
 
 In [diesem Tutorial](https://github.com/eydam-prototyping/tutorials_de/tree/master/micropython/ESP32_installation) habe ich gezeigt, wie man die Firmware auf dem ESP32 installiert. Das ist Voraussetzung für den Rest des Tutorials.
-
+## WiFi
 Zunächst müssen wir uns ins WLAN einloggen. Wie das geht, habe ich in [diesem Snippet](https://github.com/eydam-prototyping/tutorials_de/blob/master/snippets/micropython-wifi-login.md) erklärt. Hier kopiere ich den Code einfach:
 
 ```python
@@ -172,6 +172,8 @@ Type "help()" for more information.
 
 Es hat also funktioniert :)
 
+## MQTT
+
 Danach verbinde ich mich zum MQTT-Server. Dazu brauchen wir die Bibliothek "umqtt.robust". Einen Snippet, wie man die Bibliothek downloaden und einbinden kann, habe ich euch [hier]() gezeigt. Jetzt kopiere ich ihn einfach nur und erstelle einen MQTT-Client
 
 ```python
@@ -195,4 +197,15 @@ client = MQTTClient(client_id, "192.168.178.128", 1883)
 client.connect()
 ```
 
+[hier kommt noch was]
 
+## Lautstärke messen
+
+Um die Lautstärke zu messen, habe ich mir folgendes überlegt: 
+* das Mikrofon gibt ein analoges Signal aus (Auslenkung der Membran), das um einen Mittelwert schwingt. Ein leises Signal ist eine kleine Änderung des Mittelwerts, ein lautes Signal ist eine große Änderung. 
+* der Mittelwert ist nicht konstant. Ich habe festgestellt, dass sich der Mittelwert ändert. Woran das liegt, weiß ich nicht genau. Ich vermute, es hängt mit dem Luftdruck zusammen. Das muss ich in meiner Berechnung berücksichtigen.
+* ich habe mich dazu entschlossen, den Wert des Analogsignals jede Millisekunde zu messen (`adc_val`). Der Mittelwert (`adc_mean`) ist der Durchschnitt des Analogsignals. Ich will alle 10 Sekunden einen Messwert bilden, was bedeuten würde, ich muss 10s/1ms = 10.000 Messwerte zwischenspeichern. Da mir das zuviel Speicher verbraucht, berechne ich den Mittelwert mit dem EWMA-Filter (Exponentially Weighted Moving Average). Die Überlegung dahinter: der Mittelwert berechnet sich zu 99.99% aus dem alten Mittelwert und zu 0.01% aus dem gerade gemessenen Wert. Also: 
+```python
+adc_mean = 0.9999 * adc_mean + 0.0001 * adc_val
+```
+* wie der EWMA-Filter funktioniert, habe ich im Jupyter-Notebook "EWMA-Filter" erklärt.
