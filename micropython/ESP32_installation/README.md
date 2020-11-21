@@ -60,7 +60,7 @@ Hard resetting via RTS pin...
 ```
 Möglicherweise ist euer ESP32 nicht unter COM5 verfügbar. Welchen COM-Port ihr nutzt, könnt ihr in der Windows-Hardwareumgebung herausfinden. Dazu einfach in die Windows-Suchzeile "Geräte-Manager" eintippen. Dann solltet ihr unter "Anschlüsse (COM&LPT)" den COM-Port finden. Falls dort mehrere auftauchen, einfach den ESP32 trennen und wieder verbinden und beobachten, welcher COM-Port neu hinzukommt. 
 
-![Gerätemanager](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/ESP32_installation\img\2020-11-21%2013_54_08-Geraetemanager.png)
+![Gerätemanager](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/ESP32_installation/img/2020-11-21%2013_54_08-Geraetemanager.png)
 
 ## REPL
 
