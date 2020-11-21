@@ -4,7 +4,7 @@ In diesem Tutorial möchte ich zeigen, wie man mit einem SolidCircuit-HV3, einem
 
 # Sensoren
 
-![Sensoren](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/2020-11-18%2019_43_37-Grafana.png)
+![Sensoren](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/Sensoren_1.jpg)
 
 Die typischen Messgrößen, die man bei einer Wetterstation aufnimmt, sind Temperatur, Luftfeuchtigkeit, Niederschlagsmenge, Windstärke, Windrichtung. Manchmal auch noch der Luftdruck. Ich will zusätzlich noch die Beleuchtungsstärke, Lautstärke und die Energie, die eine Solarzelle erzeugen würde, aufzeichnen.
 
