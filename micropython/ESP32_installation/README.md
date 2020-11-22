@@ -72,7 +72,7 @@ Ab jetzt kann Python-Code auf dem ESP32 ausgeführt werden. Entweder Zeile für 
 Mit rshell kann ich mir anschauen, welche Dateien auf dem ESP32 zu finden sind. Dazu muss ich nur rshell starten und den Befehl `ls -l /pyboard` ausführen:
 
 ```shell
->>> rshell -p COM5
+> rshell -p COM5
 Using buffer-size of 32
 Connecting to COM5 (buffer-size 32)...
 Trying to connect to REPL  connected
@@ -83,16 +83,16 @@ Evaluating board_name ... pyboard
 Retrieving time epoch ... Jan 01, 2000
 Welcome to rshell. Use the exit command to exit rshell.
 
->>> ls -l /pyboard
+> ls -l /pyboard
    139 Jan  1 2000  boot.py
 ```
 
 Mit dem Befehl `repl` starte ich die REPL und kann Befehle eingeben, die direkt ausgeführt werden, z.B.:
 
 ```shell
->>> repl
+> repl
 Entering REPL. Use Control-X to exit.
->
+
 MicroPython v1.13 on 2020-09-02; ESP32 module with ESP32
 Type "help()" for more information.
 >>> help('modules')
