@@ -146,7 +146,7 @@ Es hat also funktioniert.
 
 ## MQTT
 
-Danach verbinde ich mich zum MQTT-Server. Dazu brauchen wir die Bibliothek "umqtt.robust". Einen Snippet, wie man die Bibliothek downloaden und einbinden kann, habe ich euch [hier](https://github.com/eydam-prototyping/tutorials_de/blob/master/snippets/micropython-upip.md) gezeigt. Jetzt kopiere ich ihn einfach nur und erstelle einen MQTT-Client.
+Danach verbinde ich mich zum MQTT-Server. Dazu brauche ich die Bibliothek "umqtt.robust". Einen Snippet, wie man die Bibliothek downloaden und einbinden kann, habe ich euch [hier](https://github.com/eydam-prototyping/tutorials_de/blob/master/snippets/micropython-upip.md) gezeigt. Jetzt kopiere ich ihn einfach nur und erstelle einen MQTT-Client. Ich brauche keine Callback-Methode, um auf irgendwelche MQTT-Botschaften zu reagieren. Ich will nur Daten senden.
 
 ```python
 # main.py
@@ -164,14 +164,42 @@ except ImportError as e:
 import ubinascii
 import machine
 
+def connect_and_subscribe(client_id, broker_ip, broker_port, sub_callback=None, 
+  sub_topics=[]):
+    client = MQTTClient(client_id, broker_ip, broker_port)
+    client.set_callback(sub_callback)
+    client.connect(clean_session=False)
+    for topic in sub_topics:
+        client.subscribe(topic)
+    time.sleep(3)
+    client.check_msg()
+    return client
+
 client_id = ubinascii.hexlify(machine.unique_id())
-client = MQTTClient(client_id, "192.168.178.128", 1883)
-client.connect()
+
+client = connect_and_subscribe(client_id, credentials["MQTT"]["ip"], 
+  credentials["MQTT"]["port"])
+
+# Sensoren initialisieren
+
+while True:
+    try:
+
+        # Sensoren lesen
+
+    except OSError:
+        client = connect_and_subscribe(client_id, credentials["MQTT"]["ip"], 
+          credentials["MQTT"]["port"])
+
 ```
 
-[hier kommt noch was]
+Damit steht erstmal das Grundgerüst. Weiter geht es mit den Sensoren.
 
-## Lautstärke messen
+## Sensoren
+
+
+
+### Lautstärke messen
 
 Um die Lautstärke zu messen, habe ich mir folgendes überlegt: 
 * das Mikrofon gibt ein analoges Signal aus (Auslenkung der Membran), das um einen Mittelwert schwingt. Ein leises Signal ist eine kleine Änderung des Mittelwerts, ein lautes Signal ist eine große Änderung. 

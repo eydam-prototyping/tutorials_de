@@ -4,6 +4,12 @@ import time
 import ubinascii
 import machine
 
+####################################
+#                                  #
+#         Connect to Wifi          #
+#                                  #
+####################################
+
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 
@@ -30,6 +36,12 @@ while not wlan.isconnected():
 
 print("connected to wifi " + ssid)
 
+####################################
+#                                  #
+#         Initialize MQTT          #
+#                                  #
+####################################
+
 try:
     from umqtt.robust import MQTTClient
 except ImportError as e:
@@ -38,9 +50,58 @@ except ImportError as e:
     upip.install('micropython-umqtt.robust')
     from umqtt.robust import MQTTClient
 
+def connect_and_subscribe(client_id, broker_ip, broker_port, sub_callback=None, 
+  sub_topics=[]):
+    # Set Options for MQTT-Broker
+    client = MQTTClient(client_id, broker_ip, broker_port)
+    # Set callback to handel Messages
+    if sub_callback is not None:
+        client.set_callback(sub_callback)
+    # Connect
+    client.connect(clean_session=False)
+    for topic in sub_topics:
+        client.subscribe(topic)
+    time.sleep(3)
+    client.check_msg()
+    return client
+
 client_id = ubinascii.hexlify(machine.unique_id())
-client = MQTTClient(client_id, "192.168.178.128", 1883)
-client.connect()
+
+client = connect_and_subscribe(client_id, credentials["mqtt"]["host"], 
+  credentials["mqtt"]["port"])
+
+####################################
+#                                  #
+#        Initialize Sensors        #
+#                                  #
+####################################
+
+#i2c = machine.I2C(scl=machine.Pin(5), sda=machine.Pin(4))
+#bme = bme280.BME280(i2c=i2c)
+#bh = BH1750.BH1750(i2c)
+#adc = machine.ADC(0)
+mq = machine.ADC(machine.Pin(34))
+
+####################################
+#                                  #
+#             Main Loop            #
+#                                  #
+####################################
+
+while True:
+    try:
+        client.check_msg()
+
+        data = {
+            "mq": mq.read()
+        }
+
+        client.publish("iot/test/mq", ujson.dumps(data))
+        time.sleep(5)
+
+    except OSError:
+        client = connect_and_subscribe(client_id, credentials["mqtt"]["host"], 
+          credentials["mqtt"]["port"])
 
 
 
