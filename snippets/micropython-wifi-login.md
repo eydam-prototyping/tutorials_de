@@ -39,6 +39,7 @@ nets = [x for x in nets if x[0].decode("ascii") in credentials["wifi"]]
 `nets` ist jetzt eine Liste mit den Netzen, für die ein Passwort vorhanden ist. Als nächstes wird solange versucht sich zu verbinden, bis es bei einem der Netze funktioniert:
 
 ```python
+import time
 i = -1       # Zählvariable
 ssid = ""    # WiFi, zu dem man sich verbinden konnte
 while not wlan.isconnected():
@@ -63,6 +64,7 @@ Hier der komplette Code:
 ```python
 import network
 import ujson
+import time
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
