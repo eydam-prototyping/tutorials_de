@@ -1,3 +1,13 @@
 {
-    "python.pythonPath": "venv\\Scripts\\python.exe"
+    "python.pythonPath": "venv\\Scripts\\python.exe",
+    "actionButtons": {
+        "defaultColor": "#FFFFFF",
+        "commands": [
+            {
+                "name": "Activate Venv",
+                "command": "./venv/Scripts/Activate.ps1",
+            }
+        ]
+    },
+    "jupyter.jupyterServerType": "local"
 }
