@@ -197,9 +197,85 @@ Damit steht erstmal das Grundgerüst. Weiter geht es mit den Sensoren.
 
 ## Sensoren
 
+Die Sensoren müssen teilweise initialisiert werden, bevor Messwerte abgefragt werden können. Ich gehe die Sensoren Schritt für Schritt durch und erkläre, wie welche Schritte nötig sind und was ich mir bezüglich der Anordnung gedacht habe.
 
+### BME280
 
-### Lautstärke messen
+Dieser Sensor ist per I2C angebunden und misst Temperatur, Luftfeuchtigkeit und Luftdruck. Glücklicherweise gibt es für ihn bereits eine fertige Bibliothek, die mit `upip` installiert werden kann. Ich kopiere dies entsprechenden Zeilen einfach in den Teil, in dem ich auch die MQTT-Bibliothek installiert habe:
+
+```python
+try:
+    from umqtt.robust import MQTTClient
+    import bme280
+except ImportError as e:
+    import upip
+    upip.install('micropython-umqtt.simple')
+    upip.install('micropython-umqtt.robust')
+    upip.install('micropython-bme280')
+    from umqtt.robust import MQTTClient
+    import bme280
+```
+Zum initialisieren muss zunächst der I2C-Treiber initialisiert werden. Danach dann der Sensor:
+
+```
+i2c = machine.I2C(0, scl=machine.Pin(22), sda=machine.Pin(21))
+bme = bme280.BME280(i2c=i2c)
+```
+
+Das auslesen passiert dann später mit:
+
+```python
+bme_data = bme.read_compensated_data()
+temperature = bme_data[0]/100
+humidity = bme_data[2]/1000
+pressure = bme_data[1]/256
+```
+
+Diese Daten werden dann per MQTT an den Raspberry Pi gesendet, dazu aber später mehr.
+
+### BH1750
+
+Dieser Sensor ist ebenfalls per I2C angebunden und misst die Beleuchtungsstärke. Hier ein paar Infos zu den physikalischen Größen:
+
+* Wenn ein Körper Licht ausstrahlt, z.B. eine Glühbirne, dann strahlt dieser Körper nicht nur Licht in einer Wellenlänge aus, sondern in vielen Wellenlängen. Welche Wellenlänge wie stark vertreten ist, wird durch das Spektrum beschrieben. 
+* Die gesamte Energie, die von einem Körper abgestrahlt wird, wird durch die Strahlungsleistung <img src="https://render.githubusercontent.com/render/math?math=\Phi"> (radiometrische Größe, Einheit Watt W) beschrieben. Der Lichtstrom <img src="https://render.githubusercontent.com/render/math?math=\Phi_V"> (photometrische Größe, Einheit Lumen lm) gibt an, wie viel für das Auge wahrnehmbare Licht ausgestrahlt wird. Sie berücksichtig also zusätzlich die Empfindlichkeit des Auges.
+* Der Lichtstrom, der pro Fläche auf einem Körper auftrifft, wird durch die Beleuchtungsstärke <img src="https://render.githubusercontent.com/render/math?math=\E_V"> (photometrische Größe, Einheit lux lx = lm/m²) angegeben. Wenn ich also wissen möchte, ob mein Schreibtisch gut ausgeleuchtet ist, dann messe ich auf der Schreibtischoberfläche die Beleuchtungsstärke (lux). Wenn ich wissen will, wieviel Licht eine Lampe aussendet, dann schaue ich auf den Lichtstrom (lumen).
+
+Für diesen Sensor habe ich leider keine per `upip` installierbare Bibliothek gefunden. Glücklicherweise findet sich aber eine Bibliothek auf github: [https://github.com/PinkInk/upylib/tree/master/bh1750](https://github.com/PinkInk/upylib/tree/master/bh1750). Hier einfach den Inhalt der Datei `bh1750/__init__.py` in eine neue Datei, z.B. `bh1750.py` kopieren und diese dann auf den ESP32 kopieren:
+
+```
+> cp ./micropython/wetterstation/bh1750.py /pyboard
+```
+
+Der Sensor braucht ebenfalls einen initialiserten I2C-Treiber und wird dann selbst initialisert mit:
+```py
+import BH1750
+bh = BH1750.BH1750(i2c)
+```
+
+Die Messwerte werden dann ausgelesen mit:
+
+```python
+luminance = bh.luminance(BH1750.BH1750.ONCE_HIRES_1)
+```
+
+Den Sensor positioniere ich direkt neben der Solarzelle in einem 3D-gedruckten Gehäuse.
+
+### Solarzelle
+
+Die Spannung, die an der Solarzelle anliegt, ist abhängig von der Last. Die Leerlaufspannung ist die Spannung, die ohne Last anliegt. Sie ist aber nicht interessant, da hier kein Strom fließt uns somit keine Leistung abgegeben wird. Daher schalte ich einen Widerstand parallel zur Solarzelle und messe die Spannung über dem Widerstand. Da ich den Widerstand (22 Ohm) kenne, kann ich mir auch den Strom ausrechnen, und damit auch die Leistung. Wenn man mit der Solarzelle wirklich Strom erzeugen wollte, würde man hier einen Maximum-Power-Point-Tracker (MPPT) einsetzen. Das brauche ich hier aber nicht.
+
+Die Spannung messe ich an GPIO 4. 
+
+```python
+adc_sol = machine.ADC(machine.Pin(4))
+
+v_sol = adc_sol.read()/4096*3.3
+i_sol = v_sol/22
+p_sol = v_sol*i_sol
+```
+
+### Mikrofon
 
 Um die Lautstärke zu messen, habe ich mir folgendes überlegt: 
 * das Mikrofon gibt ein analoges Signal aus (Auslenkung der Membran), das um einen Mittelwert schwingt. Ein leises Signal ist eine kleine Änderung des Mittelwerts, ein lautes Signal ist eine große Änderung. 
@@ -208,4 +284,101 @@ Um die Lautstärke zu messen, habe ich mir folgendes überlegt:
 ```python
 adc_mean = 0.9999 * adc_mean + 0.0001 * adc_val
 ```
-* wie der EWMA-Filter funktioniert, habe ich im Jupyter-Notebook "EWMA-Filter" erklärt.
+* wie der EWMA-Filter funktioniert, habe ich im Jupyter-Notebook "[EWMA-Filter](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/EWMA-Filter.ipynb)" erklärt.
+
+Zunächst wird der Filter initialisiert:
+```python
+adc_vol = machine.ADC(machine.Pin(2))
+adc_vol_mean = 2048 
+```
+
+Dann werden die Messwerte ermittelt:
+```python
+adc_vol_min = 4096  # Minimalwert der Spannung
+adc_vol_max = 0     # Maximalwert der Spannung
+adc_vol_dev = 0     # Mittlere Abweichung der Spannung vom Mittelwert
+for _ in range(10000):
+    adc_vol_val = adc_vol.read()
+    adc_vol_mean = 0.9999 * adc_vol_mean + 0.0001 * adc_vol_val
+    adc_vol_dev = adc_vol_dev + math.fabs(adc_vol_mean-adc_vol_val)
+    adc_vol_min = min([adc_vol_val, adc_vol_min])
+    adc_vol_max = max([adc_vol_val, adc_vol_max])
+    time.sleep_ms(1)
+adc_vol_dev /= 10000
+```
+
+### Windrichtung
+
+Die Windrichtung wird, wie bereits oben erklärt, einfach nur über einen Widerstand bestimmt. Zunächst wieder den ADC initialisieren:
+
+```python
+adc_wind = machine.ADC(machine.Pin(15))
+```
+
+Dann über den Widerstand die Windrichtung ermitteln. Da der Widerstand meist nicht so ganz genau ist, muss man hier ein bisschen Toleranz zulassen. Leider liegen die Widerstände teilweise recht eng beieinander, deswegen muss die Toleranz recht eng sein:
+
+```python
+def get_wind_dir(adc):
+    wind_dir_dict = {
+        3143: 0,
+        1624: 22.5,
+        1845: 45,
+        335:  67.5,
+        372:  90,
+        264:  112.5,
+        739:  135,
+        506:  157.5,
+        1149: 180,
+        979:  202.5,
+        2521: 225,
+        2398: 247.5,
+        3781: 270,
+        3310: 292.5,
+        3549: 315,
+        2811: 337.5,
+    }
+    for key in wind_dir_dict:
+        if key-18 < adc < key+18:
+            return wind_dir_dict[key]
+```
+
+Zum Messen dann also:
+
+```python
+wind_dir = get_wind_dir(adc_wind.read())
+```
+
+### Windgeschwindigkeit und Niderschlagsmenge
+
+Zum messen von Windgeschwindigkeit und Niderschlagsmenge müssen Impulse gezählt werden. Da ich nicht dauerhaft einen Pin beobachten will, muss ich hier einen Interrupt registrieren. Dieser Interrupt wird ausgeführt, wenn sich der Zustand eines Pins ändert:
+
+```python
+wind_speed = 0
+rain = 0
+def increment_counter(pin):
+    if pin == 18:
+        global wind_speed
+        wind_speed += 1
+    elif pin == 19:
+        global rain
+        rain += 1
+        
+wind_speed_pin = machine.Pin(18, machine.Pin.IN)
+wind_speed_pin.irq(trigger=machine.Pin.IRQ_RISING, handler=increment_counter)
+
+rain_pin = machine.Pin(19, machine.Pin.IN)
+rain_pin.irq(trigger=machine.Pin.IRQ_RISING, handler=increment_counter)
+```
+
+Später brauche ich dann nur noch die Zähler auswerten und zurücksetzen.
+
+## Zusammenfassung
+
+Das ganze Programm sieht dann also so aus [main.py](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/main.py)
+
+
+# Auswertung der Daten
+
+
+
+
