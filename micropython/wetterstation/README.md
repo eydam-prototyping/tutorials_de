@@ -379,6 +379,27 @@ Das ganze Programm sieht dann also so aus [main.py](https://github.com/eydam-pro
 
 # Auswertung der Daten
 
+In [diesem Tutorial](https://github.com/eydam-prototyping/tutorials_de/tree/master/raspberry_pi/smart_home_server) habe ich gezeigt, wie ich mir einen kleinen Smart-Home-Server eingerichtet habe. An diesen sendet die Wetterstation ihre Daten. 
 
+Damit die Daten der Wetterstation auch wirklich in der Datenbank gespeichert werden, muss ich dem Telegraf-Container noch mitteilen, dass er die MQTT-Nachrichten, die Mosquitto empfängt, speichern soll. Es sollen alle Nachrichten unter dem Topic `iot/#` gespeichert werden. Dazu müssen in `telegraf.conf` folgende Zeilen ergänzt werden:
 
+```shell
+> pi@raspberrypi:~/docker/telegraf $ nano telegraf.conf
+```
 
+```shell
+[[inputs.mqtt_consumer]]
+  servers = ["tcp://mosquitto:1883"]
+  topics = [
+    "iot/#"
+  ]
+  data_format = "influx"
+```
+
+Weiter geht es in Grafana. Nachdem ich mich eingeloggt habe, erstelle ich ein neues Dashboard. Dazu klicke ich links auf das `+` (`Create`) und dann auf `Dashboard`, anschließend auf `New Panel`. Hier wähle ich aus, was ich in meinem ersten Panel darstellen möchte. Ich entscheide mich für die Temperatur.
+
+![Grafana-Dashboard](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/2020-12-01%2018_30_23-New%20 dashboard-Grafana.png)
+
+Schaut euch einfach ein wenig in Grafana um und klickt überall mal drauf. Mein fertiges Dashboard sieht am Ende so aus:
+
+![Grafana-Dashboard](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/2020-12-01%2018_30_23-Wetterstation-Grafana.png)

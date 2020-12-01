@@ -84,10 +84,10 @@ client = connect_and_subscribe(client_id, credentials["mqtt"]["host"],
 i2c = machine.I2C(0, scl=machine.Pin(22), sda=machine.Pin(21))
 bme = bme280.BME280(i2c=i2c)
 bh = BH1750.BH1750(i2c)
-adc_sol = machine.ADC(machine.Pin(4))
-adc_vol = machine.ADC(machine.Pin(2))
+adc_sol = machine.ADC(machine.Pin(34))
+adc_vol = machine.ADC(machine.Pin(33))
 adc_vol_mean = 2048 
-adc_wind = machine.ADC(machine.Pin(15))
+adc_wind = machine.ADC(machine.Pin(39))
 
 def get_wind_dir(adc):
     wind_dir_dict = {
@@ -115,10 +115,11 @@ def get_wind_dir(adc):
 wind_speed = 0
 rain = 0
 def increment_counter(pin):
-    if pin == 18:
+    print(pin)
+    if str(pin) == "Pin(18)":
         global wind_speed
         wind_speed += 1
-    elif pin == 19:
+    elif str(pin) == "Pin(19)":
         global rain
         rain += 1
         
@@ -128,7 +129,8 @@ wind_speed_pin.irq(trigger=machine.Pin.IRQ_RISING, handler=increment_counter)
 rain_pin = machine.Pin(19, machine.Pin.IN)
 rain_pin.irq(trigger=machine.Pin.IRQ_RISING, handler=increment_counter)
 
-
+adc_sol = machine.ADC(machine.Pin(34))
+adc_sol.atten(machine.ADC.ATTN_11DB)
 ####################################
 #                                  #
 #             Main Loop            #
@@ -141,10 +143,8 @@ while True:
 
         bme_data = bme.read_compensated_data()
 
-        adc_sol = machine.ADC(machine.Pin(4))
-
-        v_sol = adc_sol.read()/4096*3.3
-        i_sol = v_sol/22
+        v_sol = adc_sol.read()/4096.0*3.3
+        i_sol = v_sol/22.0
         p_sol = v_sol*i_sol
 
         adc_vol_min = 4096  # Minimalwert der Spannung
@@ -168,6 +168,7 @@ while True:
             "volume_max": max([adc_vol_mean-adc_vol_min, adc_vol_max-adc_vol_mean]),
             "wind_dir" : get_wind_dir(adc_wind.read()),
             "wind_speed": wind_speed,
+            "solar": p_sol,
             "rain": rain,
             "rssi": wlan.status("rssi")
         }
@@ -175,7 +176,8 @@ while True:
         wind_speed = 0
         rain = 0
 
-        client.publish("iot/test/mq", ujson.dumps(data))
+        client.publish("iot/werkstatt/wetter", ujson.dumps(data))
+        print(ujson.dumps(data))
 
     except OSError:
         client = connect_and_subscribe(client_id, credentials["mqtt"]["host"], 
