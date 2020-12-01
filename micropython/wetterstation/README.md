@@ -398,7 +398,7 @@ Damit die Daten der Wetterstation auch wirklich in der Datenbank gespeichert wer
 
 Weiter geht es in Grafana. Nachdem ich mich eingeloggt habe, erstelle ich ein neues Dashboard. Dazu klicke ich links auf das `+` (`Create`) und dann auf `Dashboard`, anschließend auf `New Panel`. Hier wähle ich aus, was ich in meinem ersten Panel darstellen möchte. Ich entscheide mich für die Temperatur.
 
-![Grafana-Dashboard](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/2020-12-01%2018_30_23-New%20 dashboard-Grafana.png)
+![Grafana-Dashboard](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/wetterstation/img/2020-12-01%2018_30_23-New%20dashboard-Grafana.png)
 
 Schaut euch einfach ein wenig in Grafana um und klickt überall mal drauf. Mein fertiges Dashboard sieht am Ende so aus:
 
