@@ -55,6 +55,9 @@ class updater:
                     version_info["files"][f["name"]] = {"sha": f["sha"]}
 
         if changed:
+            print("###########################################")
+            print(version_info)
+            print("###########################################")
             with open("version.json", "w") as f:
                 ujson.dump(version_info, f) 
                 time.sleep(5)
