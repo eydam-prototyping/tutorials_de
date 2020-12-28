@@ -2,6 +2,7 @@ import uos
 import urequests
 import ujson
 import machine
+import time
 
 class updater:
     def __init__(self, github_user="eydam-prototyping", github_repo="tutorials_de",
@@ -35,7 +36,9 @@ class updater:
                 version_info = ujson.load(f)
         else:
             version_info = {"files":{}}
-
+        print("###########################################")
+        print(version_info)
+        print("###########################################")
         changed = False
         for f in github_dir:
             if f["name"] not in self.ignore_files:
@@ -60,6 +63,10 @@ class updater:
 
     def run(self):
         if "next" in uos.listdir():
+            print("found local update... executing")
+            time.sleep(5)
             self._execute_update()
         else:
+            print("check for new update")
+            time.sleep(5)
             self._download_update()
