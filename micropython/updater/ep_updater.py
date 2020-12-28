@@ -60,10 +60,18 @@ class updater:
             print("###########################################")
             with open("version.json", "w") as f:
                 ujson.dump(version_info, f) 
-                time.sleep(5)
-                machine.reset()
+                time.sleep(10)
+                #machine.reset()
         else:
             print("Everything up to date")
+
+        with open("version.json", "r") as f:
+            version_info = ujson.load(f)
+        
+        print("###########################################")
+        print(version_info)
+        print("###########################################")
+
 
     def run(self):
         if "next" in uos.listdir():
