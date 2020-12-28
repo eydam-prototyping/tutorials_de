@@ -35,6 +35,7 @@ class updater:
         if "version.json" in uos.listdir():
             with open("version.json", "r") as f:
                 version_info = ujson.load(f)
+        print(github_dir)
         changed = False
         for f in github_dir:
             if f["name"] not in self.ignore_files:
