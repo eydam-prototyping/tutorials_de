@@ -35,10 +35,6 @@ class updater:
         if "version.json" in uos.listdir():
             with open("version.json", "r") as f:
                 version_info = ujson.load(f)
-
-        print("###########################################")
-        print(version_info)
-        print("###########################################")
         changed = False
         for f in github_dir:
             if f["name"] not in self.ignore_files:
@@ -55,22 +51,15 @@ class updater:
                     version_info["files"][f["name"]] = {"sha": f["sha"]}
 
         if changed:
-            print("###########################################")
-            print(version_info)
-            print("###########################################")
             with open("version.json", "w") as f:
                 ujson.dump(version_info, f) 
                 time.sleep(10)
-                #machine.reset()
+                machine.reset()
         else:
             print("Everything up to date")
 
         with open("version.json", "r") as f:
             version_info = ujson.load(f)
-        
-        print("###########################################")
-        print(version_info)
-        print("###########################################")
 
 
     def run(self):
