@@ -57,6 +57,7 @@ class updater:
         if changed:
             with open("version.json", "w") as f:
                 ujson.dump(version_info, f) 
+                time.sleep(5)
                 machine.reset()
         else:
             print("Everything up to date")
