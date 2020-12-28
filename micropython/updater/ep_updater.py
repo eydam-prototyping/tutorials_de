@@ -30,12 +30,12 @@ class updater:
     def _download_update(self):
         github_response = urequests.get(self.github_url, headers={"User-Agent": "esp32"})
         github_dir = ujson.loads(github_response.content)
-
+        version_info = {"files":{}}
+        
         if "version.json" in uos.listdir():
             with open("version.json", "r") as f:
                 version_info = ujson.load(f)
-        else:
-            version_info = {"files":{}}
+
         print("###########################################")
         print(version_info)
         print("###########################################")
