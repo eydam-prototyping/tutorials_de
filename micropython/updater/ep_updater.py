@@ -16,6 +16,7 @@ class updater:
     def _execute_update(self):
         for file in uos.listdir("next"):
             uos.rename("next/"+file, file)
+            print(file)
         uos.rmdir("next")
         machine.reset()
 
@@ -56,6 +57,7 @@ class updater:
         if changed:
             with open("version.json", "w") as f:
                 ujson.dump(version_info, f) 
+            print("Version file updated")
             time.sleep(10)
             machine.reset()
         else:
