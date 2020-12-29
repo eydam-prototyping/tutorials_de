@@ -3,6 +3,12 @@ import urequests
 import ujson
 import machine
 import time
+import uio
+import sys
+import esp32
+import ubinascii
+import time 
+import micropython
 
 class updater:
     def __init__(self, github_user="eydam-prototyping", github_repo="tutorials_de",
@@ -75,3 +81,28 @@ class updater:
         else:
             print("check for new update")
             self._download_update()
+
+def saveError(e):
+    s = uio.StringIO()
+    sys.print_exception(e, s)
+    data = {
+        "Name": type(e).__name__,
+        "Text": e.args[0],
+        "Time": "%04d-%02d-%02d %02d:%02d:%02d" % time.localtime()[0:6],
+        "Trace": s.getvalue(),
+        "Platform": sys.platform,
+        "Version": sys.version,
+        "ResetCause": machine.reset_cause(),
+        "UniqueID": ubinascii.hexlify(machine.unique_id()),
+        "StackUse": micropython.stack_use(),
+        "Temperature": (esp32.raw_temperature()-32)*5/9,
+        "Freq": machine.freq()
+    }
+    if "version.json" in uos.listdir():
+        with open("version.json", "r") as f:
+            version_info = ujson.load(f)
+            data["FileVersionInfo"] = version_info
+
+    with open("lastErr.json", "w") as f:
+        ujson.dump(data, f) 
+    print(ujson.dumps(data))
