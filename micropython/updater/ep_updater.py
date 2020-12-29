@@ -12,6 +12,8 @@ class updater:
         self.github_path = github_path
         self.ignore_files = ignore_files
         self.github_url = "https://api.github.com/repos/%s/%s/contents/%s" % (github_user, github_repo, github_path)
+        self.github_commit_url = "https://api.github.com/repos/%s/%s/commits?path=%s&page=1&per_page=1" % (github_user, github_repo, github_path)
+
 
     def _execute_update(self):
         for file in uos.listdir("next"):
@@ -30,7 +32,7 @@ class updater:
     def _download_update(self):
         github_response = urequests.get(self.github_url, headers={"User-Agent": "esp32"})
         github_dir = ujson.loads(github_response.content)
-        version_info = {"files":{}}
+        version_info = {"commit": "", "files":{}}
         
         if "version.json" in uos.listdir():
             with open("version.json", "r") as f:
@@ -52,10 +54,15 @@ class updater:
                     version_info["files"][f["name"]] = {"sha": f["sha"]}
 
         if changed:
+            github_response = urequests.get(self.github_commit_url, headers={"User-Agent": "esp32"})
+            github_commit = ujson.loads(github_response.content)
+            version_info["commit"] = {
+                "sha": github_commit[0]["sha"],
+                "commit": github_commit[0]["commit"]
+            }
             with open("version.json", "w") as f:
                 ujson.dump(version_info, f) 
             print("Version file updated")
-            time.sleep(10)
             machine.reset()
         else:
             print("Everything up to date")
@@ -64,9 +71,7 @@ class updater:
     def run(self):
         if "next" in uos.listdir():
             print("found local update... executing")
-            time.sleep(5)
             self._execute_update()
         else:
             print("check for new update")
-            time.sleep(5)
             self._download_update()
