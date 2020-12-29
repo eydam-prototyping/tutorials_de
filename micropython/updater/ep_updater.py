@@ -16,7 +16,6 @@ class updater:
     def _execute_update(self):
         for file in uos.listdir("next"):
             uos.rename("next/"+file, file)
-            print(file)
         uos.rmdir("next")
         machine.reset()
 
@@ -41,8 +40,6 @@ class updater:
         for f in github_dir:
             if f["name"] not in self.ignore_files:
                 if f["name"] in version_info["files"]:
-                    print(f["sha"])
-                    print(version_info["files"][f["name"]]["sha"])
                     if f["sha"] != version_info["files"][f["name"]]["sha"]:
                         print("new version of %s found, starting download" % f["name"])
                         self._download_file(f)
