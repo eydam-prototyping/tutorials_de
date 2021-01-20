@@ -1,6 +1,6 @@
 # Eydam-Prototyping: ep_logger
 
-[Deutsche Version hier / German version here](Readme.de.md)
+[Deutsche Version hier / German version here](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/packages/ep_logging/README.de.md)
 
 Library, to send log messages from an IoT-Device running MicroPython to a syslog-server. How to setup a syslog-server in combination with Telegraf and Grafana is described here: [here](https://www.eydam-prototyping.com/en/2021/01/17/log-eintraege-besser-nutzen-mit-rsyslog-den-esp32-ueberwachen/)
 
