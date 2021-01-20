@@ -1,6 +1,8 @@
 # Eydam-Prototyping: ep_logger
 
-Library, to send log messages from an IoT-Device running MicroPython to a syslog-server. How to setup a syslog-server in combination with Telegraf and Grafana is described here: [hier](https://www.eydam-prototyping.com/en/2021/01/17/log-eintraege-besser-nutzen-mit-rsyslog-den-esp32-ueberwachen/)
+[Deutsche Version hier / German version here](Readme.de.md)
+
+Library, to send log messages from an IoT-Device running MicroPython to a syslog-server. How to setup a syslog-server in combination with Telegraf and Grafana is described here: [here](https://www.eydam-prototyping.com/en/2021/01/17/log-eintraege-besser-nutzen-mit-rsyslog-den-esp32-ueberwachen/)
 
 The messages will be send in ietf-syslog-protocol-23-format.
 
