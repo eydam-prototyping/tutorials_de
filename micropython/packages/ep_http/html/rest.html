@@ -1,0 +1,233 @@
+<html>
+
+<head>
+    <title>WiFi-Einstellungen</title>
+</head>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+<script>
+    async function load_config() {
+        const response = await fetch('http://' + window.location.host + '/rest/');
+        const json = await response.json();
+
+        try {
+            document.getElementById("dhcp_hostname").value = json["wifi_config"]["dhcp_hostname"]
+            document.getElementById("ap_ssid").value = json["wifi_config"]["ap_ssid"]
+            document.getElementById("ap_pass").value = json["wifi_config"]["ap_pass"]
+        } catch { }
+
+        try {
+            document.getElementById("mqtt_host").value = json["mqtt_config"]["host"]
+            document.getElementById("mqtt_port").value = json["mqtt_config"]["port"]
+        } catch { }
+
+        try {
+            document.getElementById("syslog_host").value = json["syslog_config"]["host"]
+            document.getElementById("syslog_port").value = json["syslog_config"]["port"]
+        } catch { }
+
+        var table = document.getElementById("wifi-nets");
+
+        for (var key in json["wifi_nets"]) {
+            var row = table.insertRow();
+            var f1 = document.createElement("input")
+            f1.value = json["wifi_nets"][key]["ssid"]
+            row.insertCell(0).appendChild(f1);
+
+            var f2 = document.createElement("input")
+            f2.value = json["wifi_nets"][key]["pass"]
+            f2.type = "password"
+            row.insertCell(1).appendChild(f2);
+
+            var f3 = document.createElement("input")
+            if (json["wifi_nets"][key]["bssid"]) {
+                f3.value = json["wifi_nets"][key]["bssid"];
+            } else {
+                f3.value = ""
+            }
+            row.insertCell(2).appendChild(f3);
+
+            var b4 = document.createElement("input");
+            b4.type = "button";
+            b4.value = "Löschen"
+            b4.onclick = del_row
+            row.insertCell(3).appendChild(b4);
+        }
+    }
+
+    async function load_nets() {
+        const response = await fetch('http://' + window.location.host + '/sensor/wifinets');
+        const json = await response.json();
+
+        var authmodes = {
+            0: "open",
+            1: "WEP",
+            2: "WPA-PSK",
+            3: "WPA2-PSK",
+            4: "WPA/WPA2-PSK"
+        }
+
+        var table = document.getElementById("avail-wifi-nets");
+        for (var key in json) {
+            var row = table.insertRow();
+            row.insertCell(0).innerHTML = json[key]["ssid"];
+            row.insertCell(1).innerHTML = json[key]["bssid"];
+            row.insertCell(2).innerHTML = json[key]["channel"];
+            row.insertCell(3).innerHTML = json[key]["rssi"];
+            row.insertCell(4).innerHTML = authmodes[json[key]["authmode"]];
+            row.insertCell(5).innerHTML = json[key]["hidden"];
+        }
+
+    }
+
+    function add_row() {
+        var table = document.getElementById("wifi-nets");
+        var row = table.insertRow();
+        var f1 = document.createElement("input")
+        row.insertCell(0).appendChild(f1);
+
+        var f2 = document.createElement("input")
+        row.insertCell(1).appendChild(f2);
+
+        var f3 = document.createElement("input")
+        row.insertCell(2).appendChild(f3);
+
+        var b4 = document.createElement("input");
+        b4.type = "button";
+        b4.value = "Löschen"
+        b4.onclick = del_row
+        row.insertCell(3).appendChild(b4);
+    }
+
+    function del_row(e) {
+        e.srcElement.closest('tr').remove()
+    }
+
+    async function put() {
+        var config = {
+            "wifi_config": {
+                "dhcp_hostname": document.getElementById("dhcp_hostname").value,
+                "ap_ssid": document.getElementById("ap_ssid").value,
+                "ap_pass": document.getElementById("ap_pass").value,
+            },
+            "wifi_nets": [],
+            "mqtt_config": {
+                "host": document.getElementById("mqtt_host").value,
+                "port": document.getElementById("mqtt_port").value,
+            },
+            "syslog_config": {
+                "host": document.getElementById("syslog_host").value,
+                "port": document.getElementById("syslog_port").value,
+            }
+        }
+        var table = document.getElementById("wifi-nets");
+        for (var i = 1, row; row = table.rows[i]; i++) {
+            var net = {
+                "ssid": row.cells[0].getElementsByTagName("input")[0].value,
+                "pass": row.cells[1].getElementsByTagName("input")[0].value,
+            }
+            var bssid = row.cells[2].getElementsByTagName("input")[0].value
+            if (bssid != "") {
+                net["bssid"] = bssid
+            }
+            config["wifi_nets"].push(net)
+        }
+        var s = JSON.stringify(config)
+
+        const response = await fetch('http://' + window.location.host + '/rest', {
+            method: 'PUT',
+            body: s,
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        });
+        var res = await response
+        document.getElementById("status").innerHTML = res.statusText
+    }
+
+</script>
+
+<body>
+    <div class="container">
+        <h1>WiFi-Einstellungen</h1>
+        <table class="table">
+            <tr>
+                <td>DHCP Hostname:</td>
+                <td><input type="text" id="dhcp_hostname"></td>
+            </tr>
+            <tr>
+                <td>AP-Mode SSID:</td>
+                <td><input type="text" id="ap_ssid"></td>
+            </tr>
+            <tr>
+                <td>AP-Mode Passwort:</td>
+                <td><input type="text" id="ap_pass"></td>
+            </tr>
+        </table>
+    </div>
+    <div class="container">
+        <h3>WiFi-Netze</h3>
+        <table id="wifi-nets" class="table">
+            <thead>
+                <tr>
+                    <td>SSID</td>
+                    <td>Passwort</td>
+                    <td>BSSID</td>
+                    <td>Bearbeiten</td>
+                </tr>
+            </thead>
+        </table>
+        <input type="button" value="neue Zeile" onclick="add_row()">
+    </div>
+    <div class="container">
+        <h3>Verfügbare WiFi-Netze</h3>
+        <table id="avail-wifi-nets" class="table">
+            <thead>
+                <tr>
+                    <td>SSID</td>
+                    <td>BSSID</td>
+                    <td>Channel</td>
+                    <td>RSSI</td>
+                    <td>Authmode</td>
+                    <td>Versteckt</td>
+                </tr>
+            </thead>
+        </table>
+    </div>
+    <div class="container">
+        <h1>MQTT-Einstellungen</h1>
+        <table class="table">
+            <tr>
+                <td>MQTT-Host:</td>
+                <td><input type="text" id="mqtt_host"></td>
+            </tr>
+            <tr>
+                <td>MQTT-Port:</td>
+                <td><input type="text" id="mqtt_port"></td>
+            </tr>
+        </table>
+    </div>
+    <div class="container">
+        <h1>Syslog-Einstellungen</h1>
+        <table class="table">
+            <tr>
+                <td>Syslog-Host:</td>
+                <td><input type="text" id="syslog_host"></td>
+            </tr>
+            <tr>
+                <td>Syslog-Port (UDP):</td>
+                <td><input type="text" id="syslog_port"></td>
+            </tr>
+        </table>
+
+        <input type="button" value="Speichern" onclick="put()">
+        <div id="status"></div>
+    </div>
+</body>
+
+<script>
+    load_config()
+    load_nets()
+</script>
+
+</html>
