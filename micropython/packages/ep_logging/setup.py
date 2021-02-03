@@ -7,11 +7,11 @@ sys.path.append("..")
 import sdist_upip
 
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+     long_description = fh.read()
 
 setup(
     name="micropython_eydam-prototyping_logging",
-    version="0.0.6",
+    version="0.0.8",
     author="Tobias Eydam",
     author_email="eydam-prototyping@outlook.com",
     description="Some logging functions for MicroPython in combination with syslog-server",
