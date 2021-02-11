@@ -2,11 +2,13 @@ import ujson
 import network
 import time
 import ubinascii
+import ep_logging
 
 class wifi:
-    def __init__(self, config_file="config.json", max_time_wait_for_connect=5):
+    def __init__(self, config_file="config.json", max_time_wait_for_connect=5, logger=None):
         self.config_file = config_file
         self.max_time_wait_for_connect = max_time_wait_for_connect
+        self.logger = logger if logger is not None else ep_logging.default_logger(appname="wifi")
 
     def connect(self):
         config = {}
@@ -14,15 +16,17 @@ class wifi:
             with open(self.config_file, "r") as f:
                 config = ujson.load(f)
         except:
-            print("no or invaild config file")
+            self.logger.warning("No or invaild config file. Creating new file.")
             config = self.make_sample_config()
         
         wlan = network.WLAN(network.STA_IF)
+        wlan.active(False)
         wlan.active(True)
 
         if "wifi_config" in config:
             if "dhcp_hostname" in config["wifi_config"]:
                 wlan.config(dhcp_hostname=config["wifi_config"]["dhcp_hostname"])
+                self.logger.info("Set hostname to " + config["wifi_config"]["dhcp_hostname"])
 
         if "wifi_nets" in config:
             available_nets = sorted(wlan.scan(), key=lambda x: x[3], reverse=True) 
@@ -47,21 +51,26 @@ class wifi:
                     while (not wlan.isconnected()) and (retry < self.max_time_wait_for_connect): 
                         time.sleep(1)
                         retry += 1
+                        self.logger.debug("Waiting: " + str(retry) + "/" + str(self.max_time_wait_for_connect))
                     
                 if wlan.isconnected():
                     break
 
             if wlan.isconnected():
-                print("connected to wifi " + ssid)
+                self.logger.info("Connected to " + ssid)
                 return wlan, ssid, bssid
 
+        self.logger.warning("Could not connect to configured wifi. Starting AP")
         wlan.active(False)
 
         wlan = network.WLAN(network.AP_IF)
+        wlan.active(True)
         wlan.config(essid=config["wifi_config"]["ap_ssid"])
         wlan.config(password=config["wifi_config"]["ap_pass"])
-        wlan.active(True)
-
+        
+        self.logger.warning("Please connect to " + config["wifi_config"]["ap_ssid"] + " and configure network")
+        
+        return wlan, config["wifi_config"]["ap_ssid"], None
 
     def make_sample_config(self):
         config = {

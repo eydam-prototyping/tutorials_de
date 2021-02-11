@@ -6,17 +6,17 @@ from setuptools import setup
 sys.path.append("..")
 import sdist_upip
 
-#with open("README.md", "r", encoding="utf-8") as fh:
-#     long_description = fh.read()
+with open("README.md", "r", encoding="utf-8") as fh:
+     long_description = fh.read()
 
 setup(
     name="micropython_eydam-prototyping_wifi",
-    version="0.0.2",
+    version="0.0.3",
     author="Tobias Eydam",
     author_email="eydam-prototyping@outlook.com",
     description="Some wifi functions for MicroPython",
     long_description="long_description",
-    #long_description_content_type="text/markdown",
+    long_description_content_type="text/markdown",
     url="https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/packages/ep_wifi",
     classifiers=[
         "Programming Language :: Python :: Implementation :: MicroPython",
