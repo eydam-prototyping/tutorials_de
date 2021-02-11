@@ -8,7 +8,7 @@ class Test(unittest.TestCase):
         m = ep_logging.message(msg="Testmessage", timestamp=(2021, 1, 20, 18, 48, 0))
         self.assertEqual(str(m),'<133>1 2021-01-20T18:48:00.0Z esp32 logger - - Testmessage')
 
-        m = ep_logging.message(msg="Testmessage", timestamp=(2021, 1, 20, 18, 48, 0), servity=3)
+        m = ep_logging.message(msg="Testmessage", timestamp=(2021, 1, 20, 18, 48, 0), severity=3)
         self.assertEqual(str(m),'<131>1 2021-01-20T18:48:00.0Z esp32 logger - - Testmessage')
 
         m = ep_logging.message(msg="Testmessage", timestamp=(2021, 1, 20, 18, 48, 0), facility=5)
