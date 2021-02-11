@@ -91,6 +91,13 @@ Ich habe mir ein kleines Logger-Modul geschrieben, mit dem ich Log-Ausgaben komf
 > cp ep_logging.py /pyboard
 ```
 
+Alternativ kannst du sie auch mit `upip` installieren. Dazu musst dein ESP32 mit dem Internet verbunden sein. Dann kannst du die REPL starten und folgendes eingeben:
+
+```python
+import upip
+upip.install("micropython-eydam-prototyping-logging")
+```
+
 In der `main.py` importieren wir dann das Modul, initialisieren den Logger und ersetzen die `print`-Ausgabe. Jetzt initialiseren wir den Logger als `colored_logger`, ersetzen ihn aber später als `syslog_logger`. Das können wir aber erst mit bestehender Netzwerkverbindung machen. Deswegen erfolgt das Initialisieren erst nach dem Verbinden mit dem Netzwerk:
 
 ```python
@@ -111,4 +118,67 @@ Wir werden hier später noch einiges ändern, für jetzt soll es aber erst einma
 
 ## HTTP-Server zum konfigurieren
 
+Damit der ESP32 eine Weboberfläche bekommt, muss er auf Anfragen, die standardmäßig auf Port 80 ankommen, antworten. Wie das grundsätzlich funktioniert, habe ich [hier](https://www.eydam-prototyping.com/2021/01/12/micropython-wifi-konfigurieren-mit-einfachem-http-server/) beschrieben. Ich habe diese Funktionalität noch einmal erweitert und in einem weiteren Modul zusammengefasst, dass du dir [hier](https://github.com/eydam-prototyping/tutorials_de/tree/master/micropython/packages/ep_http) herunterladen kannst. Alternativ kannst du wieder `upip` verwenden. Zusätzlich brauchst du noch das Modul `ep_config`. Also:
 
+```python
+import upip
+upip.install("micropython-eydam-prototyping-config")
+upip.install("micropython-eydam-prototyping-ep-http")
+```
+
+Damit wir auch etwas zum Anzeigen haben, erstellen wir uns die Datei `index.html` im Ordner `html` mit folgendem Inhalt:
+
+```html
+<!-- index.html -->
+<html>
+    <head>
+        <title>Heater Controller</title>
+    </head>
+    <body>
+        <h1>Hello World</h1>
+    </body>
+</html>
+```
+
+Und kopieren sie uns schon mal auf den ESP32:
+
+```shell
+> mkdir /pyboard/html
+> cp /html/index.html /pyboard/html
+```
+
+Damit der ESP32 sie auch anzeigt, ergänzen wir die Datei `main.py` um folgenden Inhalt:
+
+```python
+# main.py v3
+
+...
+
+import ep_http
+import ep_file_server
+
+...
+
+logger_http = ep_logging.colored_logger(appname="http")
+
+fs = ep_file_server.file_server(
+    html_dir="/html/",
+    default_file="index.html",
+    logger=logger_http
+)
+
+routes = [
+    ("^(.*)$", lambda sock, req: fs.serve(sock, req)),  # every route is forwarded to file server
+]
+
+http_server = ep_http.http_server(routes=routes, micropython_optimize=True, logger=logger_http)
+http_server.start()
+```
+
+Wenn wir den ESP32 jetzt neu starten und seine IP-Adresse in den Browser eingeben, sollten wir den Schriftzug "Hello World" angezeigt bekommen. Die IP-Adresse bekommen wir über unseren Router heraus, oder wir lassen sie uns anzeigen mit dem Befehl:
+
+```python
+wlan.ifconfig()
+```
+
+Aktuell kann unser HTTP-Server nur Dateien anzeigen. Wir wollen aber auch Daten vom Browser an den ESP32 senden und so Konfigurationsdateien bearbeiten. Wie das geht zeige ich im nächsten Schritt.
