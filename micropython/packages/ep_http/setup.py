@@ -11,7 +11,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="micropython_eydam-prototyping_ep_http",
-    version="0.0.2",
+    version="0.0.5",
     author="Tobias Eydam",
     author_email="eydam-prototyping@outlook.com",
     description="Some wifi functions for MicroPython",

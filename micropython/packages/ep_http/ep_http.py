@@ -23,37 +23,37 @@ class http_server:
         s.listen(5)
         self.logger.debug("listening...")
         while True:
-            r, w, err = select.select((s, ), (), (), 1)
-            if r:
-                for readable in r:
-                    self.logger.debug("Waiting for new Connection")
-                    client_sock, client_addr = s.accept()
-                    self.logger.info("New client: " + str(client_addr))
-                    
-                    if not self.micropython_optimize:
-                        client_stream = client_sock.makefile("rwb")
-                    else:
-                        client_stream = client_sock
-                    try:
-                        self.logger.debug("Reading Request")
-                        req = client_stream.readline()
-                        
-                        self.logger.debug("Processing Request")
-                        req = self.split_request(req)
-                        if req is not None:
-                            self.process_req(req, client_stream)
-                    except Exception as e:
-                        print('--- Caught Exception ---')
-                        import sys
-                        sys.print_exception(e)
-                        self.logger.error("error")
-                        print('----------------------------')
-                    finally:
-                        client_stream.close()
-                        if not self.micropython_optimize:
-                            client_sock.close()
-                        self.logger.debug("Socked closed")
-
+            self.logger.debug("Waiting for new Connection")
+            client_sock, client_addr = s.accept()
+            self.logger.info("New client: " + str(client_addr))
+            
+            if not self.micropython_optimize:
+                client_stream = client_sock.makefile("rwb")
+            else:
+                client_stream = client_sock
+            
+            _thread.start_new_thread(self.handle_client, (client_stream, client_sock))
+    
+    def handle_client(self, client_stream, client_sock):
+        try:
+            self.logger.debug("Reading Request")
+            req = client_stream.readline()
+            
+            self.logger.debug("Processing Request")
+            req = self.split_request(req)
+            if req is not None:
+                self.process_req(req, client_stream)
+        except Exception as e:
+            print('--- Caught Exception ---')
+            import sys
+            sys.print_exception(e)
+            self.logger.error("error")
+            print('----------------------------')
+        finally:
+            client_stream.close()
+            if not self.micropython_optimize:
+                client_sock.close()
+            self.logger.debug("Socked closed")
 
     def process_req(self, req, sock):
         req["header"] = header = self.split_header(sock)
