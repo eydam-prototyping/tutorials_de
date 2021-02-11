@@ -1,7 +1,7 @@
 # Eydam-Prototyping: ep_http
 
 Simple Library to run a http-server on an ESP32 or other MicroPython-enabled device.
-Currently not really stable. 
+If you want to support my work, checkout my github repo.
 
 ## Usage
 
@@ -81,3 +81,10 @@ print("Starting HTTP-Server: " + wlan.ifconfig()[0])
 s.start()
 ```
 
+# Classes:
+
+* `ep_http.http_server` is the main class, that listens to the port, handels incomming connections, parses the requests and forwards them to the corresponding routes. 
+  * Most important parameter are the routes. Those are a list of 2 tuples, consisting of a regex-String and a function, that handels the request. The tuples are gone through one after another until a regex-String matches. 
+* `ep_file_server.file_server` servers files.
+* `ep_rest_server.config_rest_server` is a minimal REST-Server to edit config-files. Currently only a reduced set of instructions is supported.
+* `ep_rest_server.sensor_rest_server` is also a minimal REST-Server, that accepts only GET-Requests. It is made to read sensor data.

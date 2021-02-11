@@ -9,10 +9,11 @@ wlan=network.WLAN(network.STA_IF)
 wlan.active(True)
 wlan.connect("<SSID>", "<Password>")
 
+
 while not wlan.isconnected():
     time.sleep(1)
 print("Connected")
-
+    
 def default_route(sock, request):
     print("default")
     print(request)        
@@ -49,8 +50,6 @@ srs = ep_rest_server.sensor_rest_server(
     ]
 )
 
-#def favicon_route(sock, request):
-
 routes = [
     ("^\/?files\/([A-Za-z0-9_\.\/]*)\??([A-Za-z0-9_\.\/]*)$", lambda sock, req: fs.serve(sock, req)),
     ("^\/?rest\/?([A-Za-z0-9_\.\/]*)\??([A-Za-z0-9_\.\/]*)$", lambda sock, req: crs.serve(sock, req)),
@@ -59,6 +58,6 @@ routes = [
     ("^(.*)$", default_route),
 ]
 
-s = ep_http.http_server(routes=routes, micropython_optimize=True)
+s = ep_http.http_server(routes=routes, micropython_optimize=True, debug=True)
 print("Starting HTTP-Server: " + wlan.ifconfig()[0])
 s.start()

@@ -2,10 +2,12 @@ import ep_default_server
 import re
 import json
 import ep_config
+import ep_logging
 
 class rest_server(ep_default_server.default_server):
-    def __init__(self):
+    def __init__(self, logger=None):
         super().__init__()
+        self.logger = logger if logger is not None else ep_logging.default_logger(appname="http_rs")
 
     def serve(self, sock, request):
         m = re.match(request["route"], request["ressource"])
@@ -24,8 +26,8 @@ class rest_server(ep_default_server.default_server):
 
 
 class config_rest_server(rest_server):
-    def __init__(self, config_file="config.json"):
-        super().__init__()
+    def __init__(self, config_file="config.json", logger=None):
+        super().__init__(logger=logger)
         self.config_file = config_file            
     
     def get(self, path, req, sock):
@@ -51,8 +53,8 @@ class config_rest_server(rest_server):
 
 
 class sensor_rest_server(rest_server):
-    def __init__(self, routes):
-        super().__init__()
+    def __init__(self, routes, logger=None):
+        super().__init__(logger=logger)
         self.routes = routes
 
     def get(self, path, req, sock):
@@ -60,7 +62,7 @@ class sensor_rest_server(rest_server):
         code = 404
 
         for route in self.routes:
-            print(route[0])
+            self.logger.debug("Used route: " + route[0])
             g = re.match(route[0], path)
             if g is not None:
                 reading = route[1](path)

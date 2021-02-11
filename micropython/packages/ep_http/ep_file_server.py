@@ -1,12 +1,14 @@
 import ep_default_server
 import os
 import re
+import ep_logging
 
 class file_server(ep_default_server.default_server):
-    def __init__(self, html_dir, default_file="config.html"):
+    def __init__(self, html_dir, default_file="config.html", logger=None):
         super().__init__()
         self.html_dir = html_dir
         self.default_file = default_file
+        self.logger = logger if logger is not None else ep_logging.default_logger(appname="http_fs")
 
     def serve(self, sock, request):
         if "?" in request["ressource"]:
@@ -27,11 +29,15 @@ class file_server(ep_default_server.default_server):
         self.return_file(m.group(1), sock)
 
     def return_file(self, file, sock):
-        if file == "":
+        self.logger.debug("Requested file: " + file)
+        if file in ["", "/"]:
             file = self.default_file
         if file == "favicon.ico":
             file = "favicon.png"
-        #print(file)
+        self.logger.info("Served file: " + file)
         if file in os.listdir(self.html_dir):
             with open(self.html_dir + file, "rb") as f:
-                sock.write(f.read())
+                data = f.read(512)
+                while data != b"":
+                    sock.send(data)
+                    data = f.read(512)

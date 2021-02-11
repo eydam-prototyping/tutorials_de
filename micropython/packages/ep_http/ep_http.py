@@ -4,46 +4,56 @@ import os
 import json
 import _thread
 import time
+import select
+import ep_logging
 
 class http_server:
-    def __init__(self, micropython_optimize=False, routes=[]):
+    def __init__(self, micropython_optimize=False, routes=[], logger=None):
         self.micropython_optimize = micropython_optimize
         self.routes = routes
+        self.logger = logger if logger is not None else ep_logging.default_logger(appname="http")
 
     def start(self):
+        self.logger.info("Server started")
         s = socket.socket()
         ai = socket.getaddrinfo("0.0.0.0", 80)
         addr = ai[0][-1]
-        s.settimeout(15000)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(addr)
         s.listen(5)
+        self.logger.debug("listening...")
         while True:
-            print("Waiting for new Connection")
-            client_sock, client_addr = s.accept()
-            print("New client: " + str(client_addr))
-            if not self.micropython_optimize:
-                client_stream = client_sock.makefile("rwb")
-            else:
-                client_stream = client_sock
-            print("Reading Request")
-            #req = ""
-            #c = client_stream.read(1)
-            #while c != b"\n":
-            #    print(str(c.decode("ascii")))
-            #    #print(int(c))
-            #    req += c.decode("ascii")
-            #    time.sleep_ms(100)
-            #    c = client_stream.read(1)
-            req = client_stream.readline()
-            print("Processing Request")
-            req = self.split_request(req)
-            if req is not None:
-                self.process_req(req, client_stream)
-            client_stream.close()
-            if not self.micropython_optimize:
-                client_sock.close()
-            print("Socked closed")
+            r, w, err = select.select((s, ), (), (), 1)
+            if r:
+                for readable in r:
+                    self.logger.debug("Waiting for new Connection")
+                    client_sock, client_addr = s.accept()
+                    self.logger.info("New client: " + str(client_addr))
+                    
+                    if not self.micropython_optimize:
+                        client_stream = client_sock.makefile("rwb")
+                    else:
+                        client_stream = client_sock
+                    try:
+                        self.logger.debug("Reading Request")
+                        req = client_stream.readline()
+                        
+                        self.logger.debug("Processing Request")
+                        req = self.split_request(req)
+                        if req is not None:
+                            self.process_req(req, client_stream)
+                    except Exception as e:
+                        print('--- Caught Exception ---')
+                        import sys
+                        sys.print_exception(e)
+                        self.logger.error("error")
+                        print('----------------------------')
+                    finally:
+                        client_stream.close()
+                        if not self.micropython_optimize:
+                            client_sock.close()
+                        self.logger.debug("Socked closed")
+
 
     def process_req(self, req, sock):
         req["header"] = header = self.split_header(sock)
@@ -60,11 +70,11 @@ class http_server:
         for route in self.routes:
             if re.match(route[0], req["ressource"]):
                 req["route"] = route[0]
-                print(req)
+                self.logger.debug(req)
                 route[1](sock, req)
                 return
         else:
-            print("no matching route found")
+            self.logger.warning("no matching route found")
 
     def split_header(self, sock):
         header = {}
@@ -79,6 +89,7 @@ class http_server:
 
 
     def split_fields(self, query, encoding="application/x-www-form-urlencoded"):
+        self.logger.debug("splitting fields, encoding is " + encoding)
         fields = {}
         if encoding == "application/x-www-form-urlencoded":
             if "=" in query:
@@ -93,7 +104,7 @@ class http_server:
 
 
     def split_request(self, req):
-        print(req)
+        self.logger.debug("Splitting Request: " + str(req))
         g = re.match(r'(GET|POST|PUT|OPTIONS) (.*?) HTTP\/(.*)', req.decode("utf8"))
         if g is not None:
             request = {
@@ -103,7 +114,7 @@ class http_server:
             }
         else:
             request = None
-            print("Invalid Request")
+            self.logger.warning("Invalid Request")
         
         return request               
 
@@ -118,37 +129,6 @@ class http_server:
         for key in d:
             line = line.replace(key, d[key])
         return line
-
-if __name__ == "__main__":
-    import ep_file_server
-    import ep_rest_server
-
-    def default_route(sock, request):
-        print(request)        
-    
-    fs = ep_file_server.file_server(
-        html_dir=r"C:\Projekte\01_eydamPrototyping\tutorials\micropython\packages\ep_http\html",
-        default_file="config_post.html"
-    )
-
-    rs = ep_rest_server.config_rest_server(
-        config_file=r"C:\Projekte\01_eydamPrototyping\tutorials\micropython\packages\ep_http\config.json"
-    )
-
-    #def favicon_route(sock, request):
-
-    routes = [
-        ("^\/?files\/?([\w\.\/]*)\??(.*)$", lambda sock, req: fs.serve(sock, req)),
-        ("^\/?rest\/?([\w\.\/]*)\??(.*)$", lambda sock, req: rs.serve(sock, req)),
-        ("^(favicon\.ico)$", lambda sock, req: fs.serve(sock, req)),
-        ("^(.*)$", default_route),
-    ]
-    
-    
-    
-    s = http_server(routes=routes)
-    #t = _thread.start_new_thread(s.start, ())
-    s.start()
 
 
 
