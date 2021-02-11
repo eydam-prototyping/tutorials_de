@@ -9,7 +9,7 @@ Die Nachrichten werden im ietf-syslog-protocol-23-Format gesendet.
 ```python
 # Syslog-Server (192.168.178.100) is listening on 514 (UDP)
 import ep_logging
-logger = ep_logging.logger("192.168.178.100", port=514)
+logger = ep_logging.syslog_logger("192.168.178.100", port=514)
 logger.notice("Test")
 ```
 Dieser Code würde folgende Nachricht produzieren:
