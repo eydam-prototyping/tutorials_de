@@ -289,6 +289,8 @@ routes = [
 Der `sensor_rest_server` führt Funktionen aus, die ihm übergeben werden. Wenn wir ihm also eine Liste mit Regex-Strings und den dazugehörigen Funktionen geben (die Funktionen müssen ein Objekt zurück geben, was sich in einen JSON-String überführen lässt), dann können wir die Funktionen vom Webbrowser aus aufrufen und uns das Ergebnis anschauen. Wenn du jetzt also `http://<ip-des-ESP32>/sensor/wifinets` in die Adresszeile eingibtst, solltest du eine Liste mit den Verfügbaren WiFi-Netzen bekommen. Hinweis: Ich muss meinen ESP32 manchmal über den Reset-Button neu starten, damit ich ein Ergebnis bekomme.
 
 Wir brauchen jetzt nur unsere `nw_config.html` anpassen, damit wir uns die Netze anzeigen lassen können (siehe `nw_config_v2.html`).
+Meine Seite sieht jetzt so aus:
+![alt text](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/heater_controller/img/nw_config_1.png "nw_config.html")
 Probier mal aus, ob alles funktioniert.
 
 Jetzt bekommt die Spalte BSSID auch eine Bedeutung. Damit können wir unser WiFi-Netz eindeutig identifizieren, falls wir mehrere mit dem gleichen Namen haben sollten. Du kannst also bestimmen, mit welchem AccessPoint genau sich dein ESP32 verbinden soll. Wenn du die Zelle leer lässt, wird der AccessPoint mit dem stärksten Signal verwendet.
