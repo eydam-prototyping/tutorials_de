@@ -136,5 +136,5 @@ http_server.start()
 
 Jetzt noch die HTML-Datei erstellen (siehe `ds_config.py`) und wir sollten unsere Sensoren zuordnen können:
 
-[Bild]
+![alt text](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/heater_controller/img/ds_config_1.png "ds_config.html")
 
