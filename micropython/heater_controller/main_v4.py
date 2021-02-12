@@ -1,9 +1,10 @@
-# main.py v3
+# main.py v4
 import network
 import time
 import ep_logging
 import ep_http
 import ep_file_server
+import ep_rest_server
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
@@ -26,8 +27,14 @@ fs = ep_file_server.file_server(
     logger=logger_http
 )
 
+crs_nw = ep_rest_server.config_rest_server(
+    config_file="./network_config.json",
+    logger=logger_http
+)
+
 routes = [
-    ("^(.*)$", lambda sock, req: fs.serve(sock, req)),  # every route is forwarded to file server
+    ("^\/?rest/nw\/?([A-Za-z0-9_\.\/]*)\??([A-Za-z0-9_\.\/]*)$", lambda sock, req: crs_nw.serve(sock, req)), 
+    ("^(.*)$", lambda sock, req: fs.serve(sock, req)), 
 ]
 
 http_server = ep_http.http_server(routes=routes, micropython_optimize=True, logger=logger_http)

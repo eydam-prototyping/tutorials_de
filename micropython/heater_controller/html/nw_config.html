@@ -1,0 +1,235 @@
+<html>
+
+<head>
+    <title>WiFi-Einstellungen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+</head>
+<script>
+    async function load_config() {
+        const response = await fetch('http://' + window.location.host + '/rest/nw/');
+        const json = await response.json();
+
+        document.getElementById("dhcp_hostname").value = json["wifi_config"]["dhcp_hostname"]
+        document.getElementById("ap_ssid").value = json["wifi_config"]["ap_ssid"]
+        document.getElementById("ap_pass").value = json["wifi_config"]["ap_pass"]
+
+        var table = document.getElementById("wifi-nets");
+
+        for (var key in json["wifi_nets"]) {
+            var row = table.insertRow();
+            var f1 = document.createElement("input")
+            f1.value = json["wifi_nets"][key]["ssid"]
+            row.insertCell(0).appendChild(f1);
+
+            var f2 = document.createElement("input")
+            f2.value = json["wifi_nets"][key]["pass"]
+            f2.type = "password"
+            row.insertCell(1).appendChild(f2);
+
+            var f3 = document.createElement("input")
+            if (json["wifi_nets"][key]["bssid"]) {
+                f3.value = json["wifi_nets"][key]["bssid"];
+            } else {
+                f3.value = ""
+            }
+            row.insertCell(2).appendChild(f3);
+
+            var b4 = document.createElement("input");
+            b4.type = "button";
+            b4.value = "Löschen"
+            b4.onclick = del_row
+            row.insertCell(3).appendChild(b4);
+        }
+    }
+
+    async function load_nets() {
+        const response = await fetch('http://' + window.location.host + '/sensor/wifinets');
+        const json = await response.json();
+
+        var authmodes = {
+            0: "open",
+            1: "WEP",
+            2: "WPA-PSK",
+            3: "WPA2-PSK",
+            4: "WPA/WPA2-PSK"
+        }
+
+        var table = document.getElementById("avail-wifi-nets");
+        for (var key in json) {
+            var row = table.insertRow();
+            row.insertCell(0).innerHTML = json[key]["ssid"];
+            row.insertCell(1).innerHTML = json[key]["bssid"];
+            row.insertCell(2).innerHTML = json[key]["channel"];
+            row.insertCell(3).innerHTML = json[key]["rssi"];
+            row.insertCell(4).innerHTML = authmodes[json[key]["authmode"]];
+            row.insertCell(5).innerHTML = json[key]["hidden"];
+        }
+
+    }
+
+    function add_row() {
+        var table = document.getElementById("wifi-nets");
+        var row = table.insertRow();
+        var f1 = document.createElement("input")
+        row.insertCell(0).appendChild(f1);
+
+        var f2 = document.createElement("input")
+        row.insertCell(1).appendChild(f2);
+
+        var f3 = document.createElement("input")
+        row.insertCell(2).appendChild(f3);
+
+        var b4 = document.createElement("input");
+        b4.type = "button";
+        b4.value = "Löschen"
+        b4.onclick = del_row
+        row.insertCell(3).appendChild(b4);
+    }
+
+    function del_row(e) {
+        e.srcElement.closest('tr').remove()
+    }
+
+    async function put() {
+        var config = {
+            "wifi_config": {
+                "dhcp_hostname": document.getElementById("dhcp_hostname").value,
+                "ap_ssid": document.getElementById("ap_ssid").value,
+                "ap_pass": document.getElementById("ap_pass").value,
+            },
+            "wifi_nets": [],
+        }
+        var table = document.getElementById("wifi-nets");
+        for (var i = 1, row; row = table.rows[i]; i++) {
+            var net = {
+                "ssid": row.cells[0].getElementsByTagName("input")[0].value,
+                "pass": row.cells[1].getElementsByTagName("input")[0].value,
+            }
+            var bssid = row.cells[2].getElementsByTagName("input")[0].value
+            if (bssid != "") {
+                net["bssid"] = bssid
+            }
+            config["wifi_nets"].push(net)
+        }
+        var s = JSON.stringify(config)
+
+        const response = await fetch('http://' + window.location.host + '/rest/nw/', {
+            method: 'PUT',
+            body: s,
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        });
+        var res = await response
+        document.getElementById("status").innerHTML = res.statusText
+    }
+
+    async function reset() {
+        document.getElementById("reset").innerHTML = "ESP32 startet neu. Seite aktualisieren Sie die Seite in ca. 15s."
+        const response = await fetch('http://' + window.location.host + '/sensor/reset/');
+        await response
+    }
+
+</script>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>WiFi-Einstellungen</h2>
+            </div>
+            <div class="col-sm-8">
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="dhcp_hostname" class="form-label">DHCP Hostname</label>
+                        <input type="text" id="dhcp_hostname" class="form-control">
+                        <div class="form-text">Name, unter dem der ESP32 im Router erscheint.</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="ap_ssid" class="form-label">AP-Mode SSID</label>
+                        <input type="text" id="ap_ssid" class="form-control">
+                        <div class="form-text">SSID des AccessPoints, falls der ESP32 sich nicht zu einem bestehenden
+                            WiFi verbinden kann</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="ap_pass" class="form-label">AP-Mode Passwort</label>
+                        <input type="text" id="ap_pass" class="form-control">
+                        <div class="form-text">Und das Passwort dazu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>WiFi-Netze</h2>
+            </div>
+            <div class="col-sm-8">
+                <table id="wifi-nets" class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">SSID</th>
+                            <th scope="col">Passwort</th>
+                            <th scope="col">BSSID</th>
+                            <th scope="col">Bearbeiten</th>
+                        </tr>
+                    </thead>
+                </table>
+                <input type="button" value="neue Zeile" onclick="add_row()">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>Verfügbare WiFi-Netze</h2>
+            </div>
+            <div class="col-sm-8">
+                <table id="avail-wifi-nets" class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">SSID</th>
+                            <th scope="col">BSSID</th>
+                            <th scope="col">Channel</th>
+                            <th scope="col">RSSI</th>
+                            <th scope="col">Authmode</th>
+                            <th scope="col">Versteckt</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h4>Speichern</h4>
+            </div>
+            <div class="col-sm-4">
+                <input type="button" value="Speichern" onclick="put()">
+            </div>
+            <div class="col-sm-4">
+                <div id="status"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h4>Neu starten</h4>
+            </div>
+            <div class="col-sm-4">
+                <input type="button" value="Neu starten" onclick="reset()">
+            </div>
+            <div class="col-sm-4">
+                <div id="reset"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    load_config()
+    load_nets()
+</script>
+
+</html>

@@ -1,4 +1,4 @@
-# main.py #v2
+# main.py v2
 import network
 import time
 import ep_logging

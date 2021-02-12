@@ -1,0 +1,145 @@
+<html>
+
+<head>
+    <title>WiFi-Einstellungen</title>
+</head>
+<script>
+    async function load_config() {
+        const response = await fetch('http://' + window.location.host + '/rest/nw/');
+        const json = await response.json();
+
+        document.getElementById("dhcp_hostname").value = json["wifi_config"]["dhcp_hostname"]
+        document.getElementById("ap_ssid").value = json["wifi_config"]["ap_ssid"]
+        document.getElementById("ap_pass").value = json["wifi_config"]["ap_pass"]
+
+        var table = document.getElementById("wifi-nets");
+
+        for (var key in json["wifi_nets"]) {
+            var row = table.insertRow();
+            var f1 = document.createElement("input")
+            f1.value = json["wifi_nets"][key]["ssid"]
+            row.insertCell(0).appendChild(f1);
+
+            var f2 = document.createElement("input")
+            f2.value = json["wifi_nets"][key]["pass"]
+            f2.type = "password"
+            row.insertCell(1).appendChild(f2);
+
+            var f3 = document.createElement("input")
+            if (json["wifi_nets"][key]["bssid"]) {
+                f3.value = json["wifi_nets"][key]["bssid"];
+            } else {
+                f3.value = ""
+            }
+            row.insertCell(2).appendChild(f3);
+
+            var b4 = document.createElement("input");
+            b4.type = "button";
+            b4.value = "Löschen"
+            b4.onclick = del_row
+            row.insertCell(3).appendChild(b4);
+        }
+    }
+    
+    function add_row() {
+        var table = document.getElementById("wifi-nets");
+        var row = table.insertRow();
+        var f1 = document.createElement("input")
+        row.insertCell(0).appendChild(f1);
+
+        var f2 = document.createElement("input")
+        row.insertCell(1).appendChild(f2);
+
+        var f3 = document.createElement("input")
+        row.insertCell(2).appendChild(f3);
+
+        var b4 = document.createElement("input");
+        b4.type = "button";
+        b4.value = "Löschen"
+        b4.onclick = del_row
+        row.insertCell(3).appendChild(b4);
+    }
+
+    function del_row(e) {
+        e.srcElement.closest('tr').remove()
+    }
+
+    async function put() {
+        var config = {
+            "wifi_config": {
+                "dhcp_hostname": document.getElementById("dhcp_hostname").value,
+                "ap_ssid": document.getElementById("ap_ssid").value,
+                "ap_pass": document.getElementById("ap_pass").value,
+            },
+            "wifi_nets": [],           
+        }
+        var table = document.getElementById("wifi-nets");
+        for (var i = 1, row; row = table.rows[i]; i++) {
+            var net = {
+                "ssid": row.cells[0].getElementsByTagName("input")[0].value,
+                "pass": row.cells[1].getElementsByTagName("input")[0].value,
+            }
+            var bssid = row.cells[2].getElementsByTagName("input")[0].value
+            if (bssid != "") {
+                net["bssid"] = bssid
+            }
+            config["wifi_nets"].push(net)
+        }
+        var s = JSON.stringify(config)
+
+        const response = await fetch('http://' + window.location.host + '/rest/nw/', {
+            method: 'PUT',
+            body: s,
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        });
+        var res = await response
+        document.getElementById("status").innerHTML = res.statusText
+    }
+
+</script>
+
+<body>
+    <div class="container">
+        <h1>WiFi-Einstellungen</h1>
+        <table class="table">
+            <tr>
+                <td>DHCP Hostname:</td>
+                <td><input type="text" id="dhcp_hostname"></td>
+            </tr>
+            <tr>
+                <td>AP-Mode SSID:</td>
+                <td><input type="text" id="ap_ssid"></td>
+            </tr>
+            <tr>
+                <td>AP-Mode Passwort:</td>
+                <td><input type="text" id="ap_pass"></td>
+            </tr>
+        </table>
+    </div>
+    <div class="container">
+        <h3>WiFi-Netze</h3>
+        <table id="wifi-nets" class="table">
+            <thead>
+                <tr>
+                    <td>SSID</td>
+                    <td>Passwort</td>
+                    <td>BSSID</td>
+                    <td>Bearbeiten</td>
+                </tr>
+            </thead>
+        </table>
+        <input type="button" value="neue Zeile" onclick="add_row()">
+    </div>
+    
+    <input type="button" value="Speichern" onclick="put()">
+    <div id="status"></div>
+
+</body>
+
+<script>
+    load_config()
+</script>
+
+</html>

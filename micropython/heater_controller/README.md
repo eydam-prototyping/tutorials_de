@@ -54,7 +54,7 @@ Wir legen die Datei `main.py` an. Ich erweitere diese Datei hier Schritt für Sc
 Und noch ein Hinweis: Meine Kommentare im Code sind auf Englisch, damit ich das Tutorial später leichter ins Englische übersetzen kann.
 
 ```python
-# main.py #v1
+# main.py v1
 import network
 import time
 
@@ -100,7 +100,7 @@ upip.install("micropython-eydam-prototyping-logging")
 In der `main.py` importieren wir dann das Modul, initialisieren den Logger und ersetzen die `print`-Ausgabe. Jetzt initialiseren wir den Logger als `colored_logger`, ersetzen ihn aber später als `syslog_logger`. Das können wir aber erst mit bestehender Netzwerkverbindung machen. Deswegen erfolgt das Initialisieren erst nach dem Verbinden mit dem Netzwerk:
 
 ```python
-# main.py #2
+# main.py v2
 
 ...
 
@@ -180,4 +180,145 @@ Wenn wir den ESP32 jetzt neu starten und seine IP-Adresse in den Browser eingebe
 wlan.ifconfig()
 ```
 
-Aktuell kann unser HTTP-Server nur Dateien anzeigen. Wir wollen aber auch Daten vom Browser an den ESP32 senden und so Konfigurationsdateien bearbeiten. Wie das geht zeige ich im nächsten Schritt.
+Was passiert hier? Der `http_server` lauscht auf Port 80 (Standard für HTTP) und nimmt die Anfrage entgegen. Dann parst er die empfangenen Daten und schaut die Routen von oben nach unten durch und übergibt die Anfrage an die Reoute, die passt. Der Regex-String `^(.*)$` bedeutet: Anfang des Strings (`^`) - dann irgendein Zeichen (`.`) belibig oft (`*`) - Ende des Strings (`$`). Es wird also jede Anfrage an den `file_server` weitergeleitet. Dieser schaut dann, ob die angefragte Datei vorhanden ist und gibt sie zurück, falls möglich.
+
+Wie bereits erwähnt, wollen wir aber auch Konfigurationen vornehmen und müssen dazu Dateien verändern können. Dafür habe ich eine mini-REST-Server gebaut, mit dem du Config-Dateien bearbeiten kannst. Dafür brauchst du zunächst mal eine Config-Datei im json-Format. Wir erstellen uns die Datei `network_config.json`:
+
+```json
+// network_config.json
+{
+    "wifi_config": {
+        "ap_ssid": "ESP32",
+        "ap_pass": "eydam-protoyping",
+        "dhcp_hostname": "ESP32"
+    },
+    "wifi_nets": [
+        {
+            "ssid": "ssid1",
+            "pass": "pass1"
+        },
+        {
+            "ssid": "ssid2",
+            "pass": "pass2"
+        }
+    ]
+}
+```
+
+Und kopieren sie auf den ESP32.
+
+Wir könnten hier auch etwas anderes reinschreiben. Dem dem Rest-Server ist das egal. Ich nutze diese Datei aber später, um daraus direkt die WiFi-Einstellungen zu laden. Wenn ihr das nicht machen wollt, kann eure Datei auch anders aussehen.
+
+Im erstem Block (`wifi_config`) machen wir generelle WiFi-Einstellungen. Unter welchem namen der ESP im Router auftaucht und falls wir uns nicht mit einem bestehenden WiFi verbinden können, wie unser Access-Point heißen soll und welches Passwort er haben soll. 
+
+Im zweiten Block (`wifi_nets`) haben wir eine Liste mit SSIDs und Passwörtern, mit denen wir uns verbinden können. Falls ein Netz mal ausfällt, können wir uns mit einem anderen verbinden.
+
+Diese Datei wollen wir jetzt über den Webbrowser bearbeiten können. Dazu fügen wir die neue Route hinzu:
+
+```python
+# main.py v4
+
+...
+
+import ep_rest_server
+
+...
+
+crs_nw = ep_rest_server.config_rest_server(
+    config_file="./network_config.json",
+    logger=logger_http
+)
+
+routes = [
+    ("^\/?rest/nw\/?([A-Za-z0-9_\.\/]*)\??([A-Za-z0-9_\.\/]*)$", lambda sock, req: crs_nw.serve(sock, req)), 
+    ("^(.*)$", lambda sock, req: fs.serve(sock, req)), 
+]
+
+...
+
+```
+
+Wir können uns den Inhalt der Datei jetzt schon anzeigen lassen, indem wir die IP-Adresse des ESP32 in den Webbrowser eingeben, gefolgt von `/rest/nw`.
+
+Das bearbeiten machen wir in einer neuen HTML-Seite, die wir `nw_config.html` nennen. Du kannst dir den Inhalt der Datei `nw_config_v1.html` kopieren und sie dann auf den ESP32 in den Ordner `html` kopieren. Hierin ist nur HTML und Javascript. Die Erklärungen dazu würde ich mal überspringen. 
+
+Jedenfalls, wenn du jetzt alles auf den ESP32 kopierst, ihn neu startest und die Seite `http://<ip-des-ESP32>/nw_config.html` besuchst, solltest du eine Webseite angezeigt bekommen, die kurz nach dem laden die Config-Datei nachlädt. Wenn du auf dieser Seite Änderungen machst und unten auf den Button "Speichern" klickst, erscheint unter dem Button die Nachricht "OK" und zeigt damit an, dass die Daten auf dem ESP32 gespeichert wurden. Wenn du die Seite aktualisierst, sollten die geänderten Daten erscheinen. In der Tabelle WiFi-Netze gibt es die Spalte BSSID. Die kannst du jetzt erstmal ignorieren.
+
+Es wäre ja jetzt noch komfortabel, wenn wir uns die verfügbaren WiFi-Netze anzeigen lassen können. Dafür habe ich das Modul `sensor_rest_server` vorgesehen. Ich habe es eigentlich vorgesehen, um Sensoren auszulesen. Aber man kann das WiFi-Modul ja auch irgendwie als Sensor betrachten. Um es zu nutzen erweitere die Datei `main.py` folgendermaßen:
+
+```python
+# main.py v5
+...
+
+import ubinascii
+
+...
+
+def scan_wifi(wlan):
+    nets = wlan.scan()
+    result = []
+    for ssid, bssid, channel, rssi, authmode, hidden in nets:
+        net = {
+            "ssid": ssid.decode("ascii"),
+            "bssid": ubinascii.hexlify(bssid).upper(),
+            "channel": channel,
+            "rssi": rssi,
+            "authmode": authmode,
+            "hidden": hidden
+        }
+        result.append(net)
+    return result
+
+...
+
+srs = ep_rest_server.sensor_rest_server(
+    [
+        ("^wifinets$", lambda path: scan_wifi(wlan)),
+    ],
+    logger=logger_http
+)
+
+routes = [
+    ("^\/?rest/nw\/?([A-Za-z0-9_\.\/]*)\??([A-Za-z0-9_\.\/]*)$", lambda sock, req: crs_nw.serve(sock, req)), 
+    ("^\/?sensor\/?([A-Za-z0-9_\.\/]*)\??([A-Za-z0-9_\.\/]*)$", lambda sock, req: srs.serve(sock, req)),
+    ("^(.*)$", lambda sock, req: fs.serve(sock, req)), 
+]
+
+```
+
+Der `sensor_rest_server` führt Funktionen aus, die ihm übergeben werden. Wenn wir ihm also eine Liste mit Regex-Strings und den dazugehörigen Funktionen geben (die Funktionen müssen ein Objekt zurück geben, was sich in einen JSON-String überführen lässt), dann können wir die Funktionen vom Webbrowser aus aufrufen und uns das Ergebnis anschauen. Wenn du jetzt also `http://<ip-des-ESP32>/sensor/wifinets` in die Adresszeile eingibtst, solltest du eine Liste mit den Verfügbaren WiFi-Netzen bekommen. Hinweis: Ich muss meinen ESP32 manchmal über den Reset-Button neu starten, damit ich ein Ergebnis bekomme.
+
+Wir brauchen jetzt nur unsere `nw_config.html` anpassen, damit wir uns die Netze anzeigen lassen können (siehe `nw_config_v2.html`).
+Probier mal aus, ob alles funktioniert.
+
+Jetzt bekommt die Spalte BSSID auch eine Bedeutung. Damit können wir unser WiFi-Netz eindeutig identifizieren, falls wir mehrere mit dem gleichen Namen haben sollten. Du kannst also bestimmen, mit welchem AccessPoint genau sich dein ESP32 verbinden soll. Wenn du die Zelle leer lässt, wird der AccessPoint mit dem stärksten Signal verwendet.
+
+Damit wir die so erstellte Konfiguration auch nutzen, nehmen wir zum verbinden mit dem WiFi mein Modul `ep_wifi` (Installieren wieder mit `upip.install("micropython-eydam-prototyping-wifi")`). Diesem Modul kannst du die Config-Datei übergeben. Das Modul probiert dann Netz für Netz durch, bis es es sich mit einem Verbinden konnte. Falls keines gefunden werden konnte, wird ein neues Netz aufgemacht, mit dem du dich dann verbinden kannst und den ESP32 so konfigurieren kannst.
+
+Achso, wir können den ESP32 über diesen `sensor_rest_server` auch neustarten. Das habe ich in diesen Schritt mal mit eingebaut:
+
+```python
+# main.py v6
+
+...
+
+import machine
+import ep_wifi
+
+wifi = ep_wifi.wifi("./network_config.json", max_time_wait_for_connect=10)
+wlan, ssid, bssid = wifi.connect()
+...
+
+srs = ep_rest_server.sensor_rest_server(
+    [
+        ("^wifinets$", lambda path: scan_wifi(wlan)),
+        ("^reset$", lambda path: machine.reset()),      # zum neustarten
+    ],
+    logger=logger_http
+)
+
+```
+
+Wenn du jetzt `http://<ip-des-ESP32>/sensor/reset` aufrufst, dann bekommst du keine Seite zurückgegeben, sondern der ESP32 startet neu.
+
+So, Zeit für eine kurze Pause. Weiter gehts dann im nächsten Kapitel. Du kannst ja als kleine Hausaufgabe die Webseiten ein bisschen schöner gestalten. Ein bisschen CSS und das ganze sieht viel besser aus.

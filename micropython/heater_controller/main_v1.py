@@ -1,4 +1,4 @@
-# main.py #v1
+# main.py v1
 import network
 import time
 

@@ -1,0 +1,17 @@
+
+    "wifi_config": {
+        "ap_ssid": "ESP32",
+        "ap_pass": "eydam-protoyping",
+        "dhcp_hostname": "ESP32"
+    },
+    "wifi_nets": [
+        {
+            "ssid": "ssid1",
+            "pass": "pass1"
+        },
+        {
+            "ssid": "ssid2",
+            "pass": "pass2"
+        }
+    ]
+}{
