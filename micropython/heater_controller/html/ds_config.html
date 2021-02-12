@@ -1,0 +1,143 @@
+<html>
+
+<head>
+    <title>WiFi-Einstellungen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+</head>
+<script>
+     async function load_config() {
+        const response = await fetch('http://' + window.location.host + '/rest/ds/');
+        const json = await response.json();
+
+        var table = document.getElementById("sensor-assignments");
+
+        for (var key in json) {
+            var row = table.insertRow();
+            
+            var f1 = document.createElement("input")
+            f1.value = key;
+            row.insertCell(0).appendChild(f1);
+            
+            var f2 = document.createElement("input")
+            f2.value = json[key]["id"];
+            row.insertCell(1).appendChild(f2);
+
+            var b3 = document.createElement("input");
+            b3.type = "button";
+            b3.value = "Löschen"
+            b3.onclick = del_row
+            row.insertCell(2).appendChild(b3);
+        }
+    }
+
+    async function load_sensors() {
+        const response = await fetch('http://' + window.location.host + '/sensor/ds18b20');
+        const json = await response.json();
+        var table = document.getElementById("avail-ds18b20");
+        for (var key in json) {
+            var row = table.insertRow();
+            row.insertCell(0).innerHTML = json[key]["id"];
+            row.insertCell(1).innerHTML = json[key]["value"];
+        }
+    }
+
+    function add_row() {
+        var table = document.getElementById("sensor-assignments");
+        var row = table.insertRow();
+        var f1 = document.createElement("input")
+        row.insertCell(0).appendChild(f1);
+
+        var f2 = document.createElement("input")
+        row.insertCell(1).appendChild(f2);
+
+        var b3 = document.createElement("input");
+        b3.type = "button";
+        b3.value = "Löschen"
+        b3.onclick = del_row
+        row.insertCell(2).appendChild(b3);
+    }
+
+    function del_row(e) {
+        e.srcElement.closest('tr').remove()
+    }
+
+    async function put() {
+        var config = {}
+        var table = document.getElementById("sensor-assignments");
+        for (var i = 1, row; row = table.rows[i]; i++) {
+            var sensor = {
+                "id": row.cells[1].getElementsByTagName("input")[0].value,
+            }
+            config[sensor["name"]] = sensor
+        }
+        var s = JSON.stringify(config)
+
+        const response = await fetch('http://' + window.location.host + '/rest/ds/', {
+            method: 'PUT',
+            body: s,
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        });
+        var res = await response
+        document.getElementById("status").innerHTML = res.statusText
+    }
+
+</script>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>Messstellenzuordnung</h2>
+            </div>
+            <div class="col-sm-8">
+                <table id="sensor-assignments" class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Name der Messstelle</th>
+                            <th scope="col">Sensor-ID</th>
+                            <th scope="col"></th>
+                        </tr>
+                    </thead>
+                </table>
+                <input type="button" value="neue Zeile" onclick="add_row()">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>Verfügbare Sensoren</h2>
+            </div>
+            <div class="col-sm-8">
+                <table id="avail-ds18b20" class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Sensor-ID</th>
+                            <th scope="col">Messwert</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h4>Speichern</h4>
+            </div>
+            <div class="col-sm-4">
+                <input type="button" value="Speichern" onclick="put()">
+            </div>
+            <div class="col-sm-4">
+                <div id="status"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    load_config()
+    load_sensors()
+</script>
+
+</html>

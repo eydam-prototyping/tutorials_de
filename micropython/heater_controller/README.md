@@ -290,7 +290,10 @@ Der `sensor_rest_server` führt Funktionen aus, die ihm übergeben werden. Wenn 
 
 Wir brauchen jetzt nur unsere `nw_config.html` anpassen, damit wir uns die Netze anzeigen lassen können (siehe `nw_config_v2.html`).
 Meine Seite sieht jetzt so aus:
+
 ![alt text](https://github.com/eydam-prototyping/tutorials_de/blob/master/micropython/heater_controller/img/nw_config_1.png "nw_config.html")
+
+(Ich hab die BSSIDs mal unkenntlich gemacht. Keine Ahnung, ob man damit irgendetwas anfangen kann.)
 Probier mal aus, ob alles funktioniert.
 
 Jetzt bekommt die Spalte BSSID auch eine Bedeutung. Damit können wir unser WiFi-Netz eindeutig identifizieren, falls wir mehrere mit dem gleichen Namen haben sollten. Du kannst also bestimmen, mit welchem AccessPoint genau sich dein ESP32 verbinden soll. Wenn du die Zelle leer lässt, wird der AccessPoint mit dem stärksten Signal verwendet.
