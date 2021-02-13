@@ -1,4 +1,4 @@
-# main.py #v7
+# main.py v7
 import time
 import ep_logging
 import ep_wifi

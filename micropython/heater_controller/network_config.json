@@ -1,4 +1,4 @@
-
+{
     "wifi_config": {
         "ap_ssid": "ESP32",
         "ap_pass": "eydam-protoyping",
@@ -14,4 +14,4 @@
             "pass": "pass2"
         }
     ]
-}{
+}

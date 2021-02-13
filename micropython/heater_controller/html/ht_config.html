@@ -1,0 +1,116 @@
+<html>
+
+<head>
+    <title>WiFi-Einstellungen</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+</head>
+<script>
+    async function load_config() {
+        const response = await fetch('http://' + window.location.host + '/rest/ht/');
+        const json = await response.json();
+
+        for (var key in json) {
+            document.getElementById(key).value = json[key]
+        }
+    }
+
+    async function put() {
+        var config = {}
+        temps = ["T1", "T2", "T3", "T4", "T5", "dT1", "dT2"]
+        for (var key in temps) {
+            config[temps[key]] = parseFloat(document.getElementById(temps[key]).value)
+        }
+
+        var s = JSON.stringify(config)
+        
+        const response = await fetch('http://' + window.location.host + '/rest/ht/', {
+            method: 'PUT',
+            body: s,
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8'
+            }
+        });
+        var res = await response
+        document.getElementById("status").innerHTML = res.statusText
+    }
+</script>
+
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-sm-4">
+                <h2>Heizung</h2>
+            </div>
+            <div class="col-sm-8">
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="T1" class="form-label">T1</label>
+                        <input type="text" id="T1" class="form-control">
+                        <div class="form-text">Temperatur (Ofen), ab der die Pumpe erstmalig anspringt (Vorschlag 60)</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="T2" class="form-label">T2</label>
+                        <input type="text" id="T2" class="form-control">
+                        <div class="form-text">Temperatur (Speicher unten), ab der der Spicher "warm" ist (Vorschlag 80)</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="T3" class="form-label">T3</label>
+                        <input type="text" id="T3" class="form-control">
+                        <div class="form-text">Temperatur (Ofen) für Warnschwelle 1 (Vorschlag 95)</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="T4" class="form-label">T4</label>
+                        <input type="text" id="T4" class="form-control">
+                        <div class="form-text">Temperatur (Ofen) für Warnschwelle 2 (Vorschlag 99)</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="T5" class="form-label">T5</label>
+                        <input type="text" id="T5" class="form-control">
+                        <div class="form-text">Temperatur (Ofen), ab der der Oben "kalt" ist (Vorschlag 50)</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="dT1" class="form-label">dT1</label>
+                        <input type="text" id="dT1" class="form-control">
+                        <div class="form-text">Temperaturdelta (Ofen - Speicher unten), die mindestens vorligen muss, damit die Pumpe an geht (Vorschlag 5)</div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="mb-3">
+                        <label for="dT2" class="form-label">dT2</label>
+                        <input type="text" id="dT2" class="form-control">
+                        <div class="form-text">Temperaturhysterese (Ofen) für Warnschwellen (Vorschlag 1)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-4">
+                <h4>Speichern</h4>
+            </div>
+            <div class="col-sm-4">
+                <input type="button" value="Speichern" onclick="put()">
+            </div>
+            <div class="col-sm-4">
+                <div id="status"></div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+<script>
+    load_config()
+</script>
+
+</html>
