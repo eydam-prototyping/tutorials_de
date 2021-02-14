@@ -1,0 +1,73 @@
+{
+    "menu": [
+        {
+            "title": "Heater",
+            "children": [
+                {
+                    "title": "Oven",
+                    "second_line": {
+                        "reading": "print_T_Oven"
+                    }
+                },
+                {
+                    "title": "Tank upper",
+                    "second_line": {
+                        "reading": "print_T_TankU"
+                    }
+                },
+                {
+                    "title": "Tank lower",
+                    "second_line": {
+                        "reading": "print_T_TankL"
+                    }
+                },
+                {
+                    "title": "State",
+                    "second_line": {
+                        "reading": "print_state"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "WiFi",
+            "children": [
+                {
+                    "title": "SSID",
+                    "second_line": {
+                        "reading": "print_ssid"
+                    }
+                },
+                {
+                    "title": "IP",
+                    "second_line": {
+                        "reading": "print_ip"
+                    }
+                },
+                {
+                    "title": "Signal",
+                    "second_line": {
+                        "reading": "print_rssi"
+                    }
+                }
+            ]
+        },
+        {
+            "title": "ESP32",
+            "children": [
+                {
+                    "title": "CPU-Temperature",
+                    "second_line": {
+                        "reading": "print_cpu_temp"
+                    }
+                },
+                {
+                    "title": "RAM-Usage",
+                    "second_line": {
+                        "reading": "print_ram"
+                    }
+                }
+            ]
+        }
+    ]
+}
